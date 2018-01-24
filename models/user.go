@@ -27,6 +27,7 @@ type User struct {
 }
 
 // SetPassword update password for user
+// bcrypt produces clear text encrypted password, no further encoding needed
 func (u *User) SetPassword(p string) (err error) {
 	var b []byte
 	if b, err = bcrypt.GenerateFromPassword([]byte(p), bcrypt.DefaultCost); err != nil {
