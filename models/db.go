@@ -18,10 +18,10 @@ type DB struct {
 	*orm.DB
 }
 
-// NewDB create a new database from BunkerConfig struct
-func NewDB(cfg types.BunkerConfig) (db *DB, err error) {
+// NewDB create a new database from Config struct
+func NewDB(cfg types.Config) (db *DB, err error) {
 	var d *orm.DB
-	if d, err = orm.Open("mysql", cfg.DatabaseURL); err != nil {
+	if d, err = orm.Open("mysql", cfg.DB.URL); err != nil {
 		return
 	}
 	d = d.LogMode(cfg.Env != "production")

@@ -13,8 +13,8 @@ import (
 	"ireul.com/toml"
 )
 
-// DecodeConfigFile decode a toml config file to types.BunkerConfig
-func DecodeConfigFile(file string) (config types.BunkerConfig, err error) {
+// DecodeConfigFile decode a toml config file to types.Config
+func DecodeConfigFile(file string) (config types.Config, err error) {
 	_, err = toml.DecodeFile(file, &config)
 	return
 }

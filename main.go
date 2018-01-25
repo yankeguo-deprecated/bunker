@@ -12,8 +12,13 @@ import (
 	"log"
 	"os"
 
+	"ireul.com/bunker/models"
+	"ireul.com/bunker/routes"
+	"ireul.com/bunker/types"
 	"ireul.com/cli"
 	_ "ireul.com/mysql"
+	"ireul.com/toml"
+	"ireul.com/web"
 )
 
 // VERSION version string of current source code
@@ -33,10 +38,82 @@ func main() {
 	}
 	app.Commands = []cli.Command{
 		migrateCommand,
-		webCommand,
+		runCommand,
 	}
 	err := app.Run(os.Args)
 	if err != nil {
 		log.Fatalln("Failed to run,", err)
 	}
+}
+
+var migrateCommand = cli.Command{
+	Name:   "migrate",
+	Usage:  "migrate the database",
+	Action: execMigrateCommand,
+}
+
+func execMigrateCommand(c *cli.Context) (err error) {
+	cfg := types.Config{}
+	if _, err = toml.DecodeFile(c.GlobalString("config"), &cfg); err != nil {
+		return
+	}
+	var db *models.DB
+	if db, err = models.NewDB(cfg); err != nil {
+		return
+	}
+	err = db.AutoMigrate()
+	return
+}
+
+var runCommand = cli.Command{
+	Name:   "run",
+	Usage:  "run the server",
+	Action: runCommandHandler,
+}
+
+func runCommandHandler(c *cli.Context) (err error) {
+	// parse config.toml
+	cfg := types.Config{}
+	if _, err = toml.DecodeFile(c.GlobalString("config"), &cfg); err != nil {
+		return
+	}
+	// create the DB
+	var db *models.DB
+	if db, err = models.NewDB(cfg); err != nil {
+		return
+	}
+	// create the web instance
+	w := createWeb(cfg)
+	// map the DB
+	w.Map(db)
+	// run the web instance
+	w.Run(cfg.HTTP.Host, cfg.HTTP.Port)
+	return
+}
+
+// createWeb create the web instance
+func createWeb(cfg types.Config) *web.Web {
+	w := web.New()
+	// set environment
+	w.SetEnv(cfg.Env)
+	// basic components
+	w.Use(web.Logger())
+	w.Use(web.Recovery())
+	// static assets and templates
+	if w.Env() == web.DEV {
+		w.Use(web.Static("public"))
+		w.Use(web.Renderer())
+	} else {
+		w.Use(web.Static("public", web.StaticOptions{BinFS: true}))
+		w.Use(web.Renderer(web.RenderOptions{BinFS: true}))
+	}
+	// set version in ctx.Data
+	w.Use(func(ctx *web.Context) {
+		ctx.Data["Version"] = VERSION
+	})
+	// map Config
+	w.Map(cfg)
+	// mount routes
+	routes.Mount(w)
+	return w
 }

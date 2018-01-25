@@ -1,2 +1,9 @@
 env = "development"
-database_url = "root@tcp(localhost:3306)/bunker_dev?parseTime=true&charset=utf8mb4,utf8"
+[database]
+url = "root@tcp(localhost:3306)/bunker_dev?parseTime=true&charset=utf8mb4,utf8"
+[http]
+host = "localhost"
+port = 3000
+[sshd]
+host = "0.0.0.0"
+port = 222
