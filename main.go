@@ -9,16 +9,20 @@
 package main
 
 import (
+	"context"
 	"log"
+	"net/http"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	"ireul.com/bunker/models"
-	"ireul.com/bunker/routes"
 	"ireul.com/bunker/types"
 	"ireul.com/cli"
 	_ "ireul.com/mysql"
+	"ireul.com/sshd"
 	"ireul.com/toml"
-	"ireul.com/web"
 )
 
 // VERSION version string of current source code
@@ -77,43 +81,35 @@ func runCommandHandler(c *cli.Context) (err error) {
 	if _, err = toml.DecodeFile(c.GlobalString("config"), &cfg); err != nil {
 		return
 	}
-	// create the DB
-	var db *models.DB
-	if db, err = models.NewDB(cfg); err != nil {
+	// create the web instance
+	var h *http.Server
+	if h, err = createHTTPServer(cfg); err != nil {
 		return
 	}
-	// create the web instance
-	w := createWeb(cfg)
-	// map the DB
-	w.Map(db)
-	// run the web instance
-	w.Run(cfg.HTTP.Host, cfg.HTTP.Port)
-	return
-}
-
-// createWeb create the web instance
-func createWeb(cfg types.Config) *web.Web {
-	w := web.New()
-	// set environment
-	w.SetEnv(cfg.Env)
-	// basic components
-	w.Use(web.Logger())
-	w.Use(web.Recovery())
-	// static assets and templates
-	if w.Env() == web.DEV {
-		w.Use(web.Static("public"))
-		w.Use(web.Renderer())
-	} else {
-		w.Use(web.Static("public", web.StaticOptions{BinFS: true}))
-		w.Use(web.Renderer(web.RenderOptions{BinFS: true}))
+	var s *sshd.Server
+	if s, err = createSSHDServer(cfg); err != nil {
+		return
 	}
-	// set version in ctx.Data
-	w.Use(func(ctx *web.Context) {
-		ctx.Data["Version"] = VERSION
-	})
-	// map Config
-	w.Map(cfg)
-	// mount routes
-	routes.Mount(w)
-	return w
+	// signal handler
+	schan := make(chan os.Signal, 1)
+	signal.Notify(schan, os.Interrupt, syscall.SIGTERM)
+	// run servers
+	wait := sync.WaitGroup{}
+	wait.Add(2)
+	go func() {
+		defer wait.Done()
+		log.Println("http server starting:", h.Addr)
+		log.Println("http server closed:", h.ListenAndServe())
+	}()
+	go func() {
+		defer wait.Done()
+		log.Println("sshd server starting:", s.Addr)
+		log.Println("sshd server closed:", s.ListenAndServe())
+	}()
+	// wait signals and shutdown
+	log.Println("signal received:", <-schan)
+	h.Shutdown(context.Background())
+	s.Shutdown(context.Background())
+	wait.Wait()
+	return
 }
