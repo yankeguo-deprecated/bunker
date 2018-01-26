@@ -110,9 +110,8 @@ func execSeed(c *cli.Context) (err error) {
 	}
 	// create user
 	u := &models.User{
-		Login:    c.String("login"),
-		Nickname: c.String("login"),
-		IsAdmin:  c.Bool("admin"),
+		Login:   c.String("login"),
+		IsAdmin: c.Bool("admin"),
 	}
 	if err = u.SetPassword(c.String("password")); err != nil {
 		return

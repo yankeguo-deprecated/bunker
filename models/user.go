@@ -9,11 +9,16 @@
 package models
 
 import (
+	"errors"
+	"regexp"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
 	"ireul.com/orm"
 )
+
+// UserLoginPattern 用户登录名正则表达式
+var UserLoginPattern = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_-]{3,15}$`)
 
 // User user model
 type User struct {
@@ -24,6 +29,17 @@ type User struct {
 	IsAdmin        bool       `orm:"not null" json:"isAdmin"`   // is this user system admin
 	IsBlocked      bool       `orm:"not null" json:"isBlocked"` // is this user blocked
 	UsedAt         *time.Time `json:"usedAt"`                   // last seen at
+}
+
+// BeforeSave before save callback
+func (u *User) BeforeSave() (err error) {
+	if len(u.Nickname) == 0 {
+		u.Nickname = u.Login
+	}
+	if !UserLoginPattern.MatchString(u.Login) {
+		err = errors.New(`invalid field user.login, allows 3~15 letters, numbers, "_" or "-"`)
+	}
+	return
 }
 
 // SetPassword update password for user

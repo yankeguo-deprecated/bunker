@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"strings"
 
 	"golang.org/x/crypto/ssh"
 	"ireul.com/bunker/models"
@@ -50,8 +51,11 @@ func createSSHDServer(cfg types.Config) (s *sshd.Server, err error) {
 func sshdSessionHandler(db *models.DB) sshd.Handler {
 	return func(sess sshd.Session) {
 		user := sess.Context().Value(sshdBunkerUserKey).(string)
-		fmt.Fprintln(sess, user)
-		log.Println(user)
+		tuser := sess.Context().Value(sshdTargetUserKey).(string)
+		thost := sess.Context().Value(sshdTargetHostKey).(string)
+		log.Println("User:", user)
+		log.Println("TargetUser:", tuser)
+		log.Println("TargetHost:", thost)
 	}
 }
 
@@ -78,6 +82,15 @@ func sshdPublicKeyHandler(db *models.DB) sshd.PublicKeyHandler {
 		}
 		// assign user login
 		ctx.SetValue(sshdBunkerUserKey, u.Login)
+		// decode target information
+		cps := strings.Split(ctx.User(), "@")
+		if len(cps) == 2 {
+			ctx.SetValue(sshdTargetUserKey, cps[0])
+			ctx.SetValue(sshdTargetHostKey, cps[1])
+		} else {
+			ctx.SetValue(sshdTargetUserKey, "")
+			ctx.SetValue(sshdTargetHostKey, "")
+		}
 		return true
 	}
 }
