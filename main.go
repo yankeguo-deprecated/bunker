@@ -10,13 +10,16 @@ package main
 
 import (
 	"context"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 
+	"golang.org/x/crypto/ssh"
 	"ireul.com/bunker/models"
 	"ireul.com/bunker/types"
 	"ireul.com/cli"
@@ -42,21 +45,22 @@ func main() {
 	}
 	app.Commands = []cli.Command{
 		migrateCommand,
+		createUserCommand,
 		runCommand,
 	}
 	err := app.Run(os.Args)
 	if err != nil {
-		log.Fatalln("Failed to run,", err)
+		log.Fatalln(err)
 	}
 }
 
 var migrateCommand = cli.Command{
 	Name:   "migrate",
 	Usage:  "migrate the database",
-	Action: execMigrateCommand,
+	Action: execMigrate,
 }
 
-func execMigrateCommand(c *cli.Context) (err error) {
+func execMigrate(c *cli.Context) (err error) {
 	cfg := types.Config{}
 	if _, err = toml.DecodeFile(c.GlobalString("config"), &cfg); err != nil {
 		return
@@ -69,13 +73,82 @@ func execMigrateCommand(c *cli.Context) (err error) {
 	return
 }
 
+var createUserCommand = cli.Command{
+	Name:   "create-user",
+	Usage:  "create a new user",
+	Action: execSeed,
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name:  "login",
+			Usage: "login name of user",
+		},
+		cli.StringFlag{
+			Name:  "password",
+			Usage: "password of user",
+		},
+		cli.StringFlag{
+			Name:  "key",
+			Usage: "public key of user",
+		},
+		cli.BoolFlag{
+			Name:  "admin",
+			Usage: "is admin",
+		},
+	},
+}
+
+func execSeed(c *cli.Context) (err error) {
+	// parse config.toml
+	cfg := types.Config{}
+	if _, err = toml.DecodeFile(c.GlobalString("config"), &cfg); err != nil {
+		return
+	}
+	// create the DB
+	var db *models.DB
+	if db, err = models.NewDB(cfg); err != nil {
+		return
+	}
+	// create user
+	u := &models.User{
+		Login:    c.String("login"),
+		Nickname: c.String("login"),
+		IsAdmin:  c.Bool("admin"),
+	}
+	if err = u.SetPassword(c.String("password")); err != nil {
+		return
+	}
+	if err = db.Create(u).Error; err != nil {
+		return
+	}
+	// create public key
+	if len(c.String("key")) > 0 {
+		var r []byte
+		if r, err = ioutil.ReadFile(c.String("key")); err != nil {
+			return
+		}
+		var p ssh.PublicKey
+		if p, _, _, _, err = ssh.ParseAuthorizedKey(r); err != nil {
+			return
+		}
+		k := &models.Key{
+			Name:        "main",
+			UserID:      u.ID,
+			Fingerprint: strings.TrimSpace(ssh.FingerprintSHA256(p)),
+		}
+		if err = db.Create(k).Error; err != nil {
+			return
+		}
+	}
+	return
+}
+
 var runCommand = cli.Command{
 	Name:   "run",
 	Usage:  "run the server",
-	Action: runCommandHandler,
+	Action: execRun,
 }
 
-func runCommandHandler(c *cli.Context) (err error) {
+func execRun(c *cli.Context) (err error) {
 	// parse config.toml
 	cfg := types.Config{}
 	if _, err = toml.DecodeFile(c.GlobalString("config"), &cfg); err != nil {

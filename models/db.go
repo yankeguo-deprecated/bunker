@@ -31,5 +31,5 @@ func NewDB(cfg types.Config) (db *DB, err error) {
 
 // AutoMigrate automatically migrate all models
 func (w *DB) AutoMigrate() error {
-	return w.DB.AutoMigrate(User{}).Error
+	return w.DB.AutoMigrate(User{}, Key{}).Error
 }
