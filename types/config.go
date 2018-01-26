@@ -10,11 +10,12 @@ package types
 
 // Config config struct for Bunker, mapped to config.yaml
 type Config struct {
-	Env  string     `toml:"env"`  // application environment
-	DB   DBConfig   `toml:"db"`   // db config
-	HTTP HTTPConfig `toml:"http"` // http config
-	SSHD SSHDConfig `toml:"sshd"` // sshd config
-	SSH  SSHConfig  `toml:"ssh"`  // ssh config
+	Env    string     `toml:"env"`    // application environment
+	Domain string     `toml:"domain"` // domain name for this site, for display
+	DB     DBConfig   `toml:"db"`     // db config
+	HTTP   HTTPConfig `toml:"http"`   // http config
+	SSHD   SSHDConfig `toml:"sshd"`   // sshd config
+	SSH    SSHConfig  `toml:"ssh"`    // ssh config
 }
 
 // DBConfig config for DB

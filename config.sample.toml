@@ -1,4 +1,5 @@
 env = "development"
+domain = "example.com"
 [db]
 url = "root@tcp(localhost:3306)/bunker_dev?parseTime=true&charset=utf8mb4,utf8"
 [http]
