@@ -22,8 +22,6 @@ import (
 
 const (
 	sshdBunkerUserKey = "bunker-user"
-	sshdTargetUserKey = "target-user"
-	sshdTargetHostKey = "target-host"
 )
 
 func createSSHDServer(cfg types.Config) (s *sshd.Server, err error) {
@@ -42,20 +40,27 @@ func createSSHDServer(cfg types.Config) (s *sshd.Server, err error) {
 	s = &sshd.Server{
 		Addr:             fmt.Sprintf("%s:%d", cfg.SSHD.Host, cfg.SSHD.Port),
 		HostSigners:      []sshd.Signer{n},
-		Handler:          sshdSessionHandler(db),
+		Handler:          sshdSessionHandler(cfg, db),
 		PublicKeyHandler: sshdPublicKeyHandler(db),
 	}
 	return
 }
 
-func sshdSessionHandler(db *models.DB) sshd.Handler {
+func sshdSessionHandler(cfg types.Config, db *models.DB) sshd.Handler {
 	return func(sess sshd.Session) {
-		user := sess.Context().Value(sshdBunkerUserKey).(string)
-		tuser := sess.Context().Value(sshdTargetUserKey).(string)
-		thost := sess.Context().Value(sshdTargetHostKey).(string)
-		log.Println("User:", user)
-		log.Println("TargetUser:", tuser)
-		log.Println("TargetHost:", thost)
+		u := sess.Context().Value(sshdBunkerUserKey).(models.User)
+		l := log.New(sess, "bunker: ", 0)
+		l.Printf("欢迎使用 bunker v%s, 用户: %s\n", VERSION, u.Login)
+		ds := strings.Split(sess.User(), "@")
+		if len(ds) != 2 {
+			l.Println()
+			l.Println("你没有指定要连接的目标用户和服务器，请参考以下格式:")
+			l.Println()
+			l.Printf("  ssh 目标用户@目标服务器@%s\n", cfg.Domain)
+			l.Println()
+			l.Println("当前可以连接的服务器:")
+			return
+		}
 	}
 }
 
@@ -81,16 +86,7 @@ func sshdPublicKeyHandler(db *models.DB) sshd.PublicKeyHandler {
 			return false
 		}
 		// assign user login
-		ctx.SetValue(sshdBunkerUserKey, u.Login)
-		// decode target information
-		cps := strings.Split(ctx.User(), "@")
-		if len(cps) == 2 {
-			ctx.SetValue(sshdTargetUserKey, cps[0])
-			ctx.SetValue(sshdTargetHostKey, cps[1])
-		} else {
-			ctx.SetValue(sshdTargetUserKey, "")
-			ctx.SetValue(sshdTargetHostKey, "")
-		}
+		ctx.SetValue(sshdBunkerUserKey, u)
 		return true
 	}
 }
