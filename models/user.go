@@ -14,30 +14,29 @@ import (
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
-	"ireul.com/orm"
 )
 
-// UserLoginPattern 用户登录名正则表达式
-var UserLoginPattern = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_-]{3,15}$`)
+// UserAccountPattern 用户登录名正则表达式
+var UserAccountPattern = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\._-]{3,15}$`)
 
 // User user model
 type User struct {
-	orm.Model
-	Login          string     `orm:"unique_index" json:"login"` // login name
-	Nickname       string     `json:"nickname"`                 // nickname of user
-	PasswordDigest string     `orm:"type:text" json:"-"`        // digest of password
-	IsAdmin        bool       `orm:"not null" json:"isAdmin"`   // is this user system admin
-	IsBlocked      bool       `orm:"not null" json:"isBlocked"` // is this user blocked
-	UsedAt         *time.Time `json:"usedAt"`                   // last seen at
+	Model
+	Account        string     `orm:"not null;unique_index" json:"account"` // account name
+	Nickname       string     `orm:"" json:"nickname"`                     // nickname of user
+	PasswordDigest string     `orm:"not null;type:text" json:"-"`          // digest of password
+	IsAdmin        bool       `orm:"not null" json:"isAdmin"`              // is this user system admin
+	IsBlocked      bool       `orm:"not null" json:"isBlocked"`            // is this user blocked
+	UsedAt         *time.Time `orm:"" json:"usedAt"`                       // last seen at
 }
 
 // BeforeSave before save callback
 func (u *User) BeforeSave() (err error) {
 	if len(u.Nickname) == 0 {
-		u.Nickname = u.Login
+		u.Nickname = u.Account
 	}
-	if !UserLoginPattern.MatchString(u.Login) {
-		err = errors.New(`invalid field user.login, allows 3~15 letters, numbers, "_" or "-"`)
+	if !UserAccountPattern.MatchString(u.Account) {
+		err = errors.New(`invalid field user.account, allows 3~15 letters, numbers, "_" or "-"`)
 	}
 	return
 }

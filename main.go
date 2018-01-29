@@ -79,8 +79,8 @@ var createUserCommand = cli.Command{
 	Action: execSeed,
 	Flags: []cli.Flag{
 		cli.StringFlag{
-			Name:  "login",
-			Usage: "login name of user",
+			Name:  "account",
+			Usage: "account name of user",
 		},
 		cli.StringFlag{
 			Name:  "password",
@@ -110,7 +110,7 @@ func execSeed(c *cli.Context) (err error) {
 	}
 	// create user
 	u := &models.User{
-		Login:   c.String("login"),
+		Account: c.String("account"),
 		IsAdmin: c.Bool("admin"),
 	}
 	if err = u.SetPassword(c.String("password")); err != nil {

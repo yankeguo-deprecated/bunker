@@ -9,9 +9,19 @@
 package models
 
 import (
+	"errors"
+	"time"
+
 	"ireul.com/bunker/types"
 	"ireul.com/orm"
 )
+
+// Model basic model, not using orm.Model, no deletedAt
+type Model struct {
+	ID        uint      `orm:"primary_key" json:"id"` // id
+	CreatedAt time.Time `orm:"" json:"createdAt"`     // created at
+	UpdatedAt time.Time `orm:"" json:"updatedAt"`     // updated at
+}
 
 // DB wrapper for orm.DB
 type DB struct {
@@ -31,5 +41,27 @@ func NewDB(cfg types.Config) (db *DB, err error) {
 
 // AutoMigrate automatically migrate all models
 func (w *DB) AutoMigrate() error {
-	return w.DB.AutoMigrate(User{}, Key{}).Error
+	return w.DB.AutoMigrate(
+		Server{},
+		ServerGroup{},
+		ServerGroupRef{},
+		User{},
+		UserGroup{},
+		UserGroupRef{},
+		Key{},
+		Grant{},
+	).Error
+}
+
+// Touch update the UsedAt field
+func (w *DB) Touch(ms ...interface{}) {
+	for _, m := range ms {
+		w.Model(m).UpdateColumn("UsedAt", time.Now())
+	}
+}
+
+// CheckGrant check target grant
+func (w *DB) CheckGrant(userID uint, targetUser string, targetServer string) (s *Server, err error) {
+	err = errors.New("not implemented")
+	return
 }
