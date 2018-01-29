@@ -9,10 +9,8 @@
 package main
 
 import (
-	"context"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -24,7 +22,6 @@ import (
 	"ireul.com/bunker/types"
 	"ireul.com/cli"
 	_ "ireul.com/mysql"
-	"ireul.com/sshd"
 	"ireul.com/toml"
 )
 
@@ -154,14 +151,8 @@ func execRun(c *cli.Context) (err error) {
 		return
 	}
 	// create the web instance
-	var h *http.Server
-	if h, err = createHTTPServer(cfg); err != nil {
-		return
-	}
-	var s *sshd.Server
-	if s, err = createSSHDServer(cfg); err != nil {
-		return
-	}
+	h := NewHTTP(cfg)
+	s := NewSSHD(cfg)
 	// signal handler
 	schan := make(chan os.Signal, 1)
 	signal.Notify(schan, os.Interrupt, syscall.SIGTERM)
@@ -170,18 +161,16 @@ func execRun(c *cli.Context) (err error) {
 	wait.Add(2)
 	go func() {
 		defer wait.Done()
-		log.Println("http server starting:", h.Addr)
 		log.Println("http server closed:", h.ListenAndServe())
 	}()
 	go func() {
 		defer wait.Done()
-		log.Println("sshd server starting:", s.Addr)
 		log.Println("sshd server closed:", s.ListenAndServe())
 	}()
 	// wait signals and shutdown
 	log.Println("signal received:", <-schan)
-	h.Shutdown(context.Background())
-	s.Shutdown(context.Background())
+	h.Shutdown()
+	s.Shutdown()
 	wait.Wait()
 	return
 }

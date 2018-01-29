@@ -9,6 +9,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -33,13 +34,21 @@ func decodeTargetUserHost(input string) (user string, host string) {
 	return
 }
 
-type sshdCore struct {
-	cfg          types.Config
+// SSHD sshd instance
+type SSHD struct {
+	Config       types.Config
+	server       *sshd.Server
 	db           *models.DB
-	clientSigner sshd.Signer
+	clientSigner ssh.Signer
+	hostSigner   ssh.Signer
 }
 
-func (core *sshdCore) createSSHDHandler() sshd.Handler {
+// NewSSHD create a SSHD instance
+func NewSSHD(config types.Config) *SSHD {
+	return &SSHD{Config: config}
+}
+
+func (s *SSHD) createHandler() sshd.Handler {
 	return func(sess sshd.Session) {
 		// logger to session connection
 		l := log.New(sess, "bunker: ", 0)
@@ -52,14 +61,14 @@ func (core *sshdCore) createSSHDHandler() sshd.Handler {
 		if len(targetUser) == 0 || len(targetHost) == 0 {
 			l.Println("你没有指定要连接的目标用户或目标服务器，请参考以下格式:")
 			l.Println()
-			l.Printf("  ssh 目标用户@目标服务器@%s\n", core.cfg.Domain)
+			l.Printf("  ssh 目标用户@目标服务器@%s\n", s.Config.Domain)
 		} else {
-			var s *models.Server
+			var srv *models.Server
 			var err error
-			if s, err = core.db.CheckGrant(u.ID, targetUser, targetHost); err != nil {
+			if srv, err = s.db.CheckGrant(u.ID, targetUser, targetHost); err != nil {
 				l.Printf("你没有权限连接 %s@%s\n", targetUser, targetHost)
 			} else {
-				core.proxySSHDSession(sess, targetUser, s.Address)
+				l.Println(srv)
 				return
 			}
 		}
@@ -69,59 +78,70 @@ func (core *sshdCore) createSSHDHandler() sshd.Handler {
 	}
 }
 
-func (core *sshdCore) createSSHDPublicKeyHandler() sshd.PublicKeyHandler {
+func (s *SSHD) createPublicKeyHandler() sshd.PublicKeyHandler {
 	return func(c sshd.Context, key sshd.PublicKey) bool {
 		var err error
 		// find Key
 		k := models.Key{}
-		if err = core.db.First(&k, "fingerprint = ?", ssh.FingerprintSHA256(key)).Error; err != nil || k.ID == 0 {
+		if err = s.db.First(&k, "fingerprint = ?", ssh.FingerprintSHA256(key)).Error; err != nil || k.ID == 0 {
 			return false
 		}
 		// find User
 		u := models.User{}
-		if err = core.db.First(&u, k.UserID).Error; err != nil || u.ID == 0 || u.IsBlocked {
+		if err = s.db.First(&u, k.UserID).Error; err != nil || u.ID == 0 || u.IsBlocked {
 			return false
 		}
 		// touch
-		core.db.Touch(&k, &u)
+		s.db.Touch(&k, &u)
 		// assign user account
 		c.SetValue(sshdBunkerUser, u)
 		return true
 	}
 }
 
-func (core *sshdCore) proxySSHDSession(sess sshd.Session, targetUser string, targetAddress string) {
+// ListenAndServe invoke internal sshd.Server#ListenAndServe
+func (s *SSHD) ListenAndServe() (err error) {
+	var k []byte
+	if s.clientSigner == nil {
+		if k, err = ioutil.ReadFile(s.Config.SSH.PrivateKey); err != nil {
+			return
+		}
+		if s.clientSigner, err = ssh.ParsePrivateKey(k); err != nil {
+			return
+		}
+	}
+	if s.hostSigner == nil {
+		if k, err = ioutil.ReadFile(s.Config.SSHD.PrivateKey); err != nil {
+			return
+		}
+		if s.hostSigner, err = ssh.ParsePrivateKey(k); err != nil {
+			return
+		}
+	}
+	if s.db == nil {
+		if s.db, err = models.NewDB(s.Config); err != nil {
+			return
+		}
+	}
+	if s.server == nil {
+		s.server = &sshd.Server{
+			Addr:             fmt.Sprintf("%s:%d", s.Config.SSHD.Host, s.Config.SSHD.Port),
+			HostSigners:      []sshd.Signer{s.hostSigner},
+			Handler:          s.createHandler(),
+			PublicKeyHandler: s.createPublicKeyHandler(),
+		}
+	}
+	return s.server.ListenAndServe()
 }
 
-func createSSHDServer(cfg types.Config) (s *sshd.Server, err error) {
-	// client signer and host signer
-	var k []byte
-	if k, err = ioutil.ReadFile(cfg.SSHD.PrivateKey); err != nil {
-		return
-	}
-	var hostSigner ssh.Signer
-	if hostSigner, err = ssh.ParsePrivateKey(k); err != nil {
-		return
-	}
-	if k, err = ioutil.ReadFile(cfg.SSH.PrivateKey); err != nil {
-		return
-	}
-	var clientSigner ssh.Signer
-	if clientSigner, err = ssh.ParsePrivateKey(k); err != nil {
-		return
-	}
-	// db
-	var db *models.DB
-	if db, err = models.NewDB(cfg); err != nil {
-		return
-	}
-	// context
-	core := &sshdCore{cfg: cfg, db: db, clientSigner: clientSigner}
-	s = &sshd.Server{
-		Addr:             fmt.Sprintf("%s:%d", cfg.SSHD.Host, cfg.SSHD.Port),
-		HostSigners:      []sshd.Signer{hostSigner},
-		Handler:          core.createSSHDHandler(),
-		PublicKeyHandler: core.createSSHDPublicKeyHandler(),
+// Shutdown shutdown the sshd instance
+func (s *SSHD) Shutdown() (err error) {
+	if s.server != nil {
+		return s.server.Shutdown(context.Background())
 	}
 	return
+}
+
+func transformSSHDCommand(input []string, user string) []string {
+	return append([]string{"sudo", "-u", user, "-i", "--"}, input...)
 }

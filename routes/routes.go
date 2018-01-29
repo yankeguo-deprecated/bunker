@@ -14,4 +14,7 @@ import (
 
 // Mount mount all routes
 func Mount(w *web.Web) {
+	w.Get("/ping", func(ctx *web.Context) {
+		ctx.PlainText(200, []byte("Pong"))
+	})
 }
