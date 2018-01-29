@@ -34,7 +34,7 @@ func NewHTTP(config types.Config) *HTTP {
 	}
 }
 
-// ListenAndServe initialize the HTTP and invoke internal http.Server#ListenAndServe
+// ListenAndServe initialize the HTTP and invoke internal http.Server#ListenAndServe, http.ErrServerClosed will be muted
 func (h *HTTP) ListenAndServe() (err error) {
 	// initialize DB if needed
 	if h.db == nil {
@@ -61,7 +61,11 @@ func (h *HTTP) ListenAndServe() (err error) {
 			Handler: h.web,
 		}
 	}
-	return h.server.ListenAndServe()
+	err = h.server.ListenAndServe()
+	if err == http.ErrServerClosed {
+		err = nil
+	}
+	return
 }
 
 // Shutdown shutdown the server

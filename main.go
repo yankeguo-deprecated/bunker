@@ -14,12 +14,12 @@ import (
 	"os"
 	"os/signal"
 	"strings"
-	"sync"
 	"syscall"
 
 	"golang.org/x/crypto/ssh"
 	"ireul.com/bunker/models"
 	"ireul.com/bunker/types"
+	"ireul.com/bunker/utils"
 	"ireul.com/cli"
 	_ "ireul.com/mysql"
 	"ireul.com/toml"
@@ -150,27 +150,42 @@ func execRun(c *cli.Context) (err error) {
 	if _, err = toml.DecodeFile(c.GlobalString("config"), &cfg); err != nil {
 		return
 	}
-	// create the web instance
-	h := NewHTTP(cfg)
-	s := NewSSHD(cfg)
+	// create bunker
+	b := NewBunker(cfg)
 	// signal handler
 	schan := make(chan os.Signal, 1)
 	signal.Notify(schan, os.Interrupt, syscall.SIGTERM)
-	// run servers
-	wait := sync.WaitGroup{}
-	wait.Add(2)
 	go func() {
-		defer wait.Done()
-		log.Println("http server closed:", h.ListenAndServe())
+		<-schan
+		b.Shutdown()
 	}()
-	go func() {
-		defer wait.Done()
-		log.Println("sshd server closed:", s.ListenAndServe())
-	}()
-	// wait signals and shutdown
-	log.Println("signal received:", <-schan)
-	h.Shutdown()
-	s.Shutdown()
-	wait.Wait()
-	return
+	return b.Run()
+}
+
+// Bunker the bunker server
+type Bunker struct {
+	Config types.Config
+	http   *HTTP
+	sshd   *SSHD
+}
+
+// NewBunker create a new bunker instance
+func NewBunker(config types.Config) *Bunker {
+	return &Bunker{Config: config}
+}
+
+// Run run the server
+func (b *Bunker) Run() (err error) {
+	if b.http == nil {
+		b.http = NewHTTP(b.Config)
+	}
+	if b.sshd == nil {
+		b.sshd = NewSSHD(b.Config)
+	}
+	return utils.RunServers(b.http, b.sshd)
+}
+
+// Shutdown the internal servers
+func (b *Bunker) Shutdown() (err error) {
+	return utils.ShutdownServers(b.http, b.sshd)
 }

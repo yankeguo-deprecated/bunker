@@ -99,7 +99,7 @@ func (s *SSHD) createPublicKeyHandler() sshd.PublicKeyHandler {
 	}
 }
 
-// ListenAndServe invoke internal sshd.Server#ListenAndServe
+// ListenAndServe invoke internal sshd.Server#ListenAndServe, sshd.ErrServerClosed will be muted
 func (s *SSHD) ListenAndServe() (err error) {
 	var k []byte
 	if s.clientSigner == nil {
@@ -131,7 +131,11 @@ func (s *SSHD) ListenAndServe() (err error) {
 			PublicKeyHandler: s.createPublicKeyHandler(),
 		}
 	}
-	return s.server.ListenAndServe()
+	err = s.server.ListenAndServe()
+	if err == sshd.ErrServerClosed {
+		err = nil
+	}
+	return
 }
 
 // Shutdown shutdown the sshd instance
