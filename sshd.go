@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"strings"
 
 	"golang.org/x/crypto/ssh"
@@ -25,13 +26,125 @@ const (
 	sshdBunkerUser = "bunker-user"
 )
 
-func decodeTargetUserHost(input string) (user string, host string) {
+func decodeSSHDUser(input string) (user string, host string) {
 	ds := strings.Split(input, "@")
 	if len(ds) == 2 {
 		user = ds[0]
 		host = ds[1]
 	}
 	return
+}
+
+func transformSSHDCommand(input []string, user string) []string {
+	return append([]string{"sudo", "-u", user, "-i", "--"}, input...)
+}
+
+// SSHDSession session of a sshd connection
+type SSHDSession struct {
+	sshd.Session
+	config       types.Config
+	clientSigner ssh.Signer
+	db           *models.DB
+	logger       *log.Logger
+	user         models.User
+	targetUser   string
+	targetHost   string
+	pty          sshd.Pty
+	isPty        bool
+	wchan        <-chan sshd.Window
+}
+
+// NewSSHDSession create a new sshd session
+func NewSSHDSession(sshd *SSHD, sess sshd.Session) *SSHDSession {
+	s := &SSHDSession{
+		Session:      sess,
+		config:       sshd.Config,
+		clientSigner: sshd.clientSigner,
+		db:           sshd.db,
+		logger:       log.New(sess, "bunker: ", 0),
+		user:         sess.Context().Value(sshdBunkerUser).(models.User),
+	}
+	s.targetUser, s.targetHost = decodeSSHDUser(sess.User())
+	s.pty, s.wchan, s.isPty = sess.Pty()
+	return s
+}
+
+// Printf same as fmt.Printf
+func (s *SSHDSession) Printf(f string, v ...interface{}) {
+	s.logger.Printf(f, v...)
+}
+
+// PtyPrintf Printf if isPty
+func (s *SSHDSession) PtyPrintf(f string, v ...interface{}) {
+	if s.isPty {
+		s.Printf(f, v...)
+	}
+}
+
+// Println same as fmt.Println
+func (s *SSHDSession) Println(v ...interface{}) {
+	s.logger.Println(v...)
+}
+
+// PtyPrintln Println if isPty
+func (s *SSHDSession) PtyPrintln(v ...interface{}) {
+	if s.isPty {
+		s.logger.Println(v...)
+	}
+}
+
+func (s *SSHDSession) createHostKeyCallback(srv models.Server) ssh.HostKeyCallback {
+	return func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+		return nil
+	}
+}
+
+// Run run the sshd session
+func (s *SSHDSession) Run() {
+	s.PtyPrintf("欢迎使用 bunker v%s，用户: %s\n", VERSION, s.user.Account)
+	// check information
+	if len(s.targetUser) == 0 || len(s.targetHost) == 0 {
+		s.Printf("没有指定目标服务器或目标账户，参考格式: \"ssh 目标账户@目标服务器@%s\"\n", s.config.Domain)
+		s.Exit(1)
+		return
+	}
+	// find server
+	var srv models.Server
+	var err error
+	if err = s.db.First(&srv, "name = ?", s.targetHost).Error; srv.ID == 0 || err != nil {
+		s.Println("没有找到目标服务器，或者没有目标账户访问权限")
+		s.Exit(1)
+		return
+	}
+	// check authentication
+	if err = s.db.CheckGrant(s.user, srv, s.targetUser); err != nil {
+		s.Println("没有找到目标服务器，或者没有目标账户访问权限")
+		s.Exit(1)
+		return
+	}
+	// build ssh bridge
+	var client *ssh.Client
+	if client, err = ssh.Dial("tcp", srv.Address, &ssh.ClientConfig{
+		User: "root",
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(s.clientSigner),
+		},
+		HostKeyCallback: s.createHostKeyCallback(srv),
+	}); err != nil {
+		s.Println("无法连接目标服务器")
+		s.Exit(1)
+		return
+	}
+	defer client.Close()
+	var csess *ssh.Session
+	if csess, err = client.NewSession(); err != nil {
+		s.Println("无法连接目标服务器")
+		s.Exit(1)
+		return
+	}
+	defer csess.Close()
+	//
+	transformSSHDCommand(s.Command(), s.targetUser)
 }
 
 // SSHD sshd instance
@@ -50,31 +163,7 @@ func NewSSHD(config types.Config) *SSHD {
 
 func (s *SSHD) createHandler() sshd.Handler {
 	return func(sess sshd.Session) {
-		// logger to session connection
-		l := log.New(sess, "bunker: ", 0)
-		// get the user
-		u := sess.Context().Value(sshdBunkerUser).(models.User)
-		l.Printf("欢迎使用 bunker v%s, 用户: %s\n", VERSION, u.Account)
-		l.Println()
-		// check target format
-		targetUser, targetHost := decodeTargetUserHost(sess.User())
-		if len(targetUser) == 0 || len(targetHost) == 0 {
-			l.Println("你没有指定要连接的目标用户或目标服务器，请参考以下格式:")
-			l.Println()
-			l.Printf("  ssh 目标用户@目标服务器@%s\n", s.Config.Domain)
-		} else {
-			var srv *models.Server
-			var err error
-			if srv, err = s.db.CheckGrant(u.ID, targetUser, targetHost); err != nil {
-				l.Printf("你没有权限连接 %s@%s\n", targetUser, targetHost)
-			} else {
-				l.Println(srv)
-				return
-			}
-		}
-		l.Println()
-		// print all available servers
-		return
+		NewSSHDSession(s, sess).Run()
 	}
 }
 
@@ -144,8 +233,4 @@ func (s *SSHD) Shutdown() (err error) {
 		return s.server.Shutdown(context.Background())
 	}
 	return
-}
-
-func transformSSHDCommand(input []string, user string) []string {
-	return append([]string{"sudo", "-u", user, "-i", "--"}, input...)
 }

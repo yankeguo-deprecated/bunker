@@ -9,7 +9,6 @@
 package models
 
 import (
-	"errors"
 	"time"
 
 	"ireul.com/bunker/types"
@@ -61,7 +60,6 @@ func (w *DB) Touch(ms ...interface{}) {
 }
 
 // CheckGrant check target grant
-func (w *DB) CheckGrant(userID uint, targetUser string, targetServer string) (s *Server, err error) {
-	err = errors.New("not implemented")
-	return
+func (w *DB) CheckGrant(user User, srv Server, targetUser string) (err error) {
+	return nil
 }
