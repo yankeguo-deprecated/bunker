@@ -122,7 +122,7 @@ func (s *SSHDSession) Run() {
 		s.Exit(1)
 		return
 	}
-	// build ssh bridge
+	// create ssh client
 	var client *ssh.Client
 	if client, err = ssh.Dial("tcp", srv.Address, &ssh.ClientConfig{
 		User: "root",
@@ -131,20 +131,38 @@ func (s *SSHDSession) Run() {
 		},
 		HostKeyCallback: s.createHostKeyCallback(srv),
 	}); err != nil {
-		s.Println("无法连接目标服务器")
+		s.Println("无法连接目标服务器，连接失败:", err)
 		s.Exit(1)
 		return
 	}
 	defer client.Close()
-	var csess *ssh.Session
-	if csess, err = client.NewSession(); err != nil {
-		s.Println("无法连接目标服务器")
+	// create ssh session
+	var cs *ssh.Session
+	if cs, err = client.NewSession(); err != nil {
+		s.Println("无法连接目标服务器，无法建立 Session:", err)
 		s.Exit(1)
 		return
 	}
-	defer csess.Close()
-	//
-	transformSSHDCommand(s.Command(), s.targetUser)
+	defer cs.Close()
+	// pipe ssh session
+	cs.Stdin = s
+	cs.Stdout = s
+	cs.Stderr = s.Stderr()
+	for range s.Environ() {
+		// TODO: proxy environment
+	}
+	if s.isPty {
+		if err = cs.RequestPty(s.pty.Term, s.pty.Window.Height, s.pty.Window.Width, nil); err != nil {
+			s.Println("无法连接目标服务器，无法请求 PTY:", err)
+			s.Exit(1)
+			return
+		}
+		go func() {
+			for w := range s.wchan {
+				cs.WindowChange(w.Height, w.Width)
+			}
+		}()
+	}
 }
 
 // SSHD sshd instance
@@ -159,6 +177,18 @@ type SSHD struct {
 // NewSSHD create a SSHD instance
 func NewSSHD(config types.Config) *SSHD {
 	return &SSHD{Config: config}
+}
+
+// CreatePublicKeyCallback creates the PublicKeyCallback for ssh.ServerConfig
+func (s *SSHD) CreatePublicKeyCallback() interface{} {
+	return func(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error) {
+		return nil, nil
+	}
+}
+
+// Handle handles a ssh.ServerConn, should run in a seperated goroutine
+func (s *SSHD) Handle(conn *ssh.ServerConn) error {
+	return nil
 }
 
 func (s *SSHD) createHandler() sshd.Handler {
