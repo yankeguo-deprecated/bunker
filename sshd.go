@@ -6,7 +6,7 @@
  * https://opensource.org/licenses/MIT
  */
 
-package main
+package bunker
 
 import (
 	"context"
