@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net"
 	"strings"
 	"sync"
@@ -20,6 +21,7 @@ import (
 	"golang.org/x/crypto/ssh"
 	"ireul.com/bunker/models"
 	"ireul.com/bunker/types"
+	"ireul.com/shellquote"
 )
 
 const (
@@ -33,7 +35,7 @@ var (
 	ErrSSHDAlreadyRunning = errors.New("sshd is already running")
 )
 
-func decodeSSHDUser(input string) (user string, host string) {
+func sshdDecodeUser(input string) (user string, host string) {
 	ds := strings.Split(input, "@")
 	if len(ds) == 2 {
 		user = ds[0]
@@ -42,8 +44,17 @@ func decodeSSHDUser(input string) (user string, host string) {
 	return
 }
 
-func transformSSHDCommand(input []string, user string) []string {
-	return append([]string{"sudo", "-u", user, "-i", "--"}, input...)
+func sshdTransformCommand(user string, input string) string {
+	if len(input) > 0 {
+		ins, err := shellquote.Split(input)
+		if err != nil {
+			return shellquote.Join("echo", "INVALID_COMMAND")
+		}
+		var cmd = []string{"sudo", "-n", "-u", user, "-i", "--"}
+		cmd = append(cmd, ins...)
+		return shellquote.Join(cmd...)
+	}
+	return shellquote.Join("sudo", "-n", "-u", user, "-i")
 }
 
 // SSHD sshd instance
@@ -71,7 +82,7 @@ func (s *SSHD) createPublicKeyCallback() func(ssh.ConnMetadata, ssh.PublicKey) (
 	return func(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error) {
 		var err error
 		// fetch target information
-		tu, th := decodeSSHDUser(conn.User())
+		tu, th := sshdDecodeUser(conn.User())
 		if len(tu) == 0 || len(th) == 0 {
 			return nil, fmt.Errorf("invalid target information, example: \"ssh [TARGET_USER]@[TARGET_HOST]@%s\"", s.Config.Domain)
 		}
@@ -157,6 +168,11 @@ func (s *SSHD) ListenAndServe() (err error) {
 
 func (s *SSHD) handleRawConn(c net.Conn) {
 	var err error
+	defer func() {
+		if err != nil {
+			log.Println(err)
+		}
+	}()
 	// upgrade connection
 	var sconn *ssh.ServerConn
 	var cchan <-chan ssh.NewChannel
@@ -165,16 +181,19 @@ func (s *SSHD) handleRawConn(c net.Conn) {
 		return
 	}
 	defer sconn.Close()
+	// extract parameters
+	var targetUser = sconn.Permissions.Extensions[sshdBunkerTargetUser]
+	var targetAddress = sconn.Permissions.Extensions[sshdBunkerTargetAddress]
 	// build client
 	var ccfg = &ssh.ClientConfig{
-		User: sconn.Permissions.Extensions[sshdBunkerTargetUser],
+		User: "root",
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(s.clientSigner),
 		},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 	var client *ssh.Client
-	if client, err = ssh.Dial("tcp", sconn.Permissions.Extensions[sshdBunkerTargetAddress], ccfg); err != nil {
+	if client, err = ssh.Dial("tcp", targetAddress, ccfg); err != nil {
 		return
 	}
 	defer client.Close()
@@ -206,8 +225,8 @@ func (s *SSHD) handleRawConn(c net.Conn) {
 		}
 
 		wg.Add(2)
-		go bridgeSSHRequestAndClose(tchn, sreq, wg)
-		go bridgeSSHRequestAndClose(schn, treq, wg)
+		go bridgeSSHRequestAndClose(tchn, sreq, wg, targetUser)
+		go bridgeSSHRequestAndClose(schn, treq, wg, targetUser)
 
 		go bridgeSSHStream(tchn, schn)
 		go bridgeSSHStream(schn, tchn)
@@ -224,12 +243,36 @@ func (s *SSHD) Shutdown() (err error) {
 	return
 }
 
-func bridgeSSHRequestAndClose(chn ssh.Channel, reqs <-chan *ssh.Request, wg *sync.WaitGroup) {
+func bridgeSSHRequestAndClose(chn ssh.Channel, reqs <-chan *ssh.Request, wg *sync.WaitGroup, targetUser string) {
 	defer wg.Done()
 	for req := range reqs {
-		ok, _ := chn.SendRequest(req.Type, req.WantReply, req.Payload)
-		if req.WantReply {
-			req.Reply(ok, nil)
+		// transform exec, shell request with targetUser
+		switch req.Type {
+		case "exec":
+			// transform "exec" with sudo prefix
+			var pl = struct{ Value string }{}
+			ssh.Unmarshal(req.Payload, &pl)
+			pl.Value = sshdTransformCommand(targetUser, pl.Value)
+			req.Payload = ssh.Marshal(&pl)
+		case "shell":
+			// transform "shell" to "exec" with sudo prefix
+			var pl = struct{ Value string }{
+				Value: sshdTransformCommand(targetUser, ""),
+			}
+			req.Type = "exec"
+			req.Payload = ssh.Marshal(&pl)
+		}
+		// blacklist some requests
+		switch req.Type {
+		case "x11-req", "subsystem", "env":
+			if req.WantReply {
+				req.Reply(false, nil)
+			}
+		default:
+			ok, _ := chn.SendRequest(req.Type, req.WantReply, req.Payload)
+			if req.WantReply {
+				req.Reply(ok, nil)
+			}
 		}
 	}
 	chn.Close()
