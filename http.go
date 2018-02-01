@@ -10,6 +10,7 @@ package bunker
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -17,6 +18,11 @@ import (
 	"ireul.com/bunker/routes"
 	"ireul.com/bunker/types"
 	"ireul.com/web"
+)
+
+var (
+	// ErrHTTPAlreadyRunning HTTP instance is already running
+	ErrHTTPAlreadyRunning = errors.New("http is already running")
 )
 
 // HTTP http server of bunker
@@ -55,16 +61,18 @@ func (h *HTTP) ListenAndServe() (err error) {
 		routes.Mount(h.web)
 	}
 	// create the http.Server
-	if h.server == nil {
-		h.server = &http.Server{
-			Addr:    fmt.Sprintf("%s:%d", h.Config.HTTP.Host, h.Config.HTTP.Port),
-			Handler: h.web,
-		}
+	if h.server != nil {
+		return ErrHTTPAlreadyRunning
+	}
+	h.server = &http.Server{
+		Addr:    fmt.Sprintf("%s:%d", h.Config.HTTP.Host, h.Config.HTTP.Port),
+		Handler: h.web,
 	}
 	err = h.server.ListenAndServe()
 	if err == http.ErrServerClosed {
 		err = nil
 	}
+	h.server = nil
 	return
 }
 

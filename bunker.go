@@ -109,6 +109,27 @@ func (b *Bunker) CreateUser(option CreateUserOption) (err error) {
 	return
 }
 
+// CreateServerOption option to create a server
+type CreateServerOption struct {
+	Name    string
+	Address string
+}
+
+// CreateServer create a server
+func (b *Bunker) CreateServer(option CreateServerOption) (err error) {
+	if err = b.ensureDB(); err != nil {
+		return
+	}
+	r := &models.Server{
+		Name:    option.Name,
+		Address: option.Address,
+	}
+	if err = b.db.Create(r).Error; err != nil {
+		return
+	}
+	return
+}
+
 // Shutdown the internal servers
 func (b *Bunker) Shutdown() (err error) {
 	return utils.ShutdownServers(b.http, b.sshd)
