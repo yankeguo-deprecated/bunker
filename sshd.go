@@ -13,7 +13,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
 	"strings"
 	"sync"
@@ -46,13 +45,7 @@ func sshdDecodeUser(input string) (user string, host string) {
 
 func sshdTransformCommand(user string, input string) string {
 	if len(input) > 0 {
-		ins, err := shellquote.Split(input)
-		if err != nil {
-			return shellquote.Join("echo", "INVALID_COMMAND")
-		}
-		var cmd = []string{"sudo", "-n", "-u", user, "-i", "--"}
-		cmd = append(cmd, ins...)
-		return shellquote.Join(cmd...)
+		return shellquote.Join("sudo", "-n", "-u", user, "-i", "--", "bash", "-c", input)
 	}
 	return shellquote.Join("sudo", "-n", "-u", user, "-i")
 }
@@ -168,11 +161,6 @@ func (s *SSHD) ListenAndServe() (err error) {
 
 func (s *SSHD) handleRawConn(c net.Conn) {
 	var err error
-	defer func() {
-		if err != nil {
-			log.Println(err)
-		}
-	}()
 	// upgrade connection
 	var sconn *ssh.ServerConn
 	var cchan <-chan ssh.NewChannel
