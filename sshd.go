@@ -43,7 +43,7 @@ func sshdDecodeUser(input string) (user string, host string) {
 	return
 }
 
-func sshdTransformCommand(user string, input string) string {
+func sshdModifyCommand(user string, input string) string {
 	if len(input) > 0 {
 		return shellquote.Join("sudo", "-n", "-u", user, "-i", "--", "bash", "-c", input)
 	}
@@ -211,14 +211,8 @@ func (s *SSHD) handleRawConn(c net.Conn) {
 		if schn, sreq, err = nchn.Accept(); err != nil {
 			continue
 		}
-
-		wg.Add(2)
-		go bridgeSSHRequestAndClose(tchn, sreq, wg, targetUser)
-		go bridgeSSHRequestAndClose(schn, treq, wg, targetUser)
-
-		go bridgeSSHStream(tchn, schn)
-		go bridgeSSHStream(schn, tchn)
-		go bridgeSSHStream(schn.Stderr(), tchn.Stderr())
+		// forward ssh channel
+		sshForwardChannel(schn, sreq, tchn, treq, targetUser, wg)
 	}
 	wg.Wait()
 }
@@ -231,21 +225,67 @@ func (s *SSHD) Shutdown() (err error) {
 	return
 }
 
-func bridgeSSHRequestAndClose(chn ssh.Channel, reqs <-chan *ssh.Request, wg *sync.WaitGroup, targetUser string) {
+type sshForwarder struct {
+	schn  ssh.Channel
+	sreq  <-chan *ssh.Request
+	tchn  ssh.Channel
+	treq  <-chan *ssh.Request
+	tuser string
+}
+
+func sshForwardChannel(schn ssh.Channel, sreq <-chan *ssh.Request, tchn ssh.Channel, treq <-chan *ssh.Request, tuser string, gwg *sync.WaitGroup) {
+	gwg.Add(2)
+	f := &sshForwarder{
+		schn:  schn,
+		sreq:  sreq,
+		tchn:  tchn,
+		treq:  treq,
+		tuser: tuser,
+	}
+	go f.forwardTarget(gwg)
+	go f.forwardSource(gwg)
+}
+
+func (f *sshForwarder) forwardTarget(gwg *sync.WaitGroup) {
+	defer gwg.Done()
+	// ensure stdout, stderr and target chan *ssh.Request are all finished
+	wg := &sync.WaitGroup{}
+	wg.Add(3)
+	go f.forwardStdout(wg)
+	go f.forwardStderr(wg)
+	go f.forwardTargetRequests(wg)
+	wg.Wait()
+	// close source channel, because target channel is totally finished
+	f.schn.Close()
+}
+
+func (f *sshForwarder) forwardSource(gwg *sync.WaitGroup) {
+	defer gwg.Done()
+	// ensure stdin, source chan *ssh.Request are all finished
+	wg := &sync.WaitGroup{}
+	wg.Add(2)
+	go f.forwardStdin(wg)
+	go f.forwardSourceRequests(wg)
+	wg.Wait()
+	// close target channel, because source channel is totally finished
+	f.tchn.Close()
+}
+
+func (f *sshForwarder) forwardSourceRequests(wg *sync.WaitGroup) {
 	defer wg.Done()
-	for req := range reqs {
+	for req := range f.sreq {
 		// transform exec, shell request with targetUser
 		switch req.Type {
 		case "exec":
 			// transform "exec" with sudo prefix
 			var pl = struct{ Value string }{}
 			ssh.Unmarshal(req.Payload, &pl)
-			pl.Value = sshdTransformCommand(targetUser, pl.Value)
+			pl.Value = sshdModifyCommand(f.tuser, pl.Value)
 			req.Payload = ssh.Marshal(&pl)
 		case "shell":
 			// transform "shell" to "exec" with sudo prefix
 			var pl = struct{ Value string }{
-				Value: sshdTransformCommand(targetUser, ""),
+				Value: sshdModifyCommand(f.tuser, ""),
 			}
 			req.Type = "exec"
 			req.Payload = ssh.Marshal(&pl)
@@ -257,17 +297,37 @@ func bridgeSSHRequestAndClose(chn ssh.Channel, reqs <-chan *ssh.Request, wg *syn
 				req.Reply(false, nil)
 			}
 		default:
-			ok, _ := chn.SendRequest(req.Type, req.WantReply, req.Payload)
+			ok, _ := f.tchn.SendRequest(req.Type, req.WantReply, req.Payload)
 			if req.WantReply {
 				req.Reply(ok, nil)
 			}
 		}
 	}
-	chn.Close()
 }
 
-func bridgeSSHStream(dst io.Writer, src io.Reader) {
-	if dst != nil && src != nil {
-		io.Copy(dst, src)
+func (f *sshForwarder) forwardTargetRequests(wg *sync.WaitGroup) {
+	defer wg.Done()
+	for req := range f.treq {
+		ok, _ := f.schn.SendRequest(req.Type, req.WantReply, req.Payload)
+		if req.WantReply {
+			req.Reply(ok, nil)
+		}
 	}
+}
+
+func (f *sshForwarder) forwardStdin(wg *sync.WaitGroup) {
+	defer wg.Done()
+	io.Copy(f.tchn, f.schn)
+	f.tchn.CloseWrite()
+}
+
+func (f *sshForwarder) forwardStdout(wg *sync.WaitGroup) {
+	defer wg.Done()
+	io.Copy(f.schn, f.tchn)
+	f.schn.CloseWrite()
+}
+
+func (f *sshForwarder) forwardStderr(wg *sync.WaitGroup) {
+	defer wg.Done()
+	io.Copy(f.schn.Stderr(), f.tchn.Stderr())
 }
