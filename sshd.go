@@ -209,6 +209,7 @@ func (s *SSHD) handleRawConn(c net.Conn) {
 			continue
 		}
 		if schn, sreq, err = nchn.Accept(); err != nil {
+			tchn.Close()
 			continue
 		}
 		// forward ssh channel
@@ -290,7 +291,7 @@ func (f *sshForwarder) forwardSourceRequests(wg *sync.WaitGroup) {
 			req.Type = "exec"
 			req.Payload = ssh.Marshal(&pl)
 		}
-		// blacklist some requests
+		// ban "x11-req", "subsystem", "env" requests, cause they may escape from sudo
 		switch req.Type {
 		case "x11-req", "subsystem", "env":
 			if req.WantReply {
