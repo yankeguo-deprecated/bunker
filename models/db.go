@@ -9,11 +9,16 @@
 package models
 
 import (
+	"fmt"
+	"regexp"
 	"time"
 
 	"ireul.com/bunker/types"
 	"ireul.com/orm"
 )
+
+// NamePattern general name pattern
+var NamePattern = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\._-]{3,15}$`)
 
 // Model basic model, not using orm.Model, no deletedAt
 type Model struct {
@@ -42,11 +47,8 @@ func NewDB(cfg types.Config) (db *DB, err error) {
 func (w *DB) AutoMigrate() error {
 	return w.DB.AutoMigrate(
 		Server{},
-		ServerGroup{},
-		ServerGroupRef{},
+		Group{},
 		User{},
-		UserGroup{},
-		UserGroupRef{},
 		Key{},
 		Grant{},
 	).Error
@@ -59,7 +61,26 @@ func (w *DB) Touch(ms ...interface{}) {
 	}
 }
 
+// EnsureGroup ensure a server group
+func (w *DB) EnsureGroup(name string) (g *Group, err error) {
+	g = &Group{}
+	err = w.FirstOrCreate(g, map[string]interface{}{"name": name}).Error
+	return
+}
+
 // CheckGrant check target grant
 func (w *DB) CheckGrant(user User, srv Server, targetUser string) (err error) {
-	return nil
+	n := time.Now()
+	g := Grant{}
+	// check user -> server grants
+	w.Where("user_id = ? AND target_type = ? AND target_id = ? AND target_user = ? AND (expires_at IS NULL OR expires_at > ?)", user.ID, GrantTargetServer, srv.ID, targetUser, n).First(&g)
+	if g.ID != 0 {
+		return nil
+	}
+	// check user -> server group grants
+	w.Where("user_id = ? AND target_type = ? AND target_id = ? AND target_user = ? AND (expires_at IS NULL OR expires_at > ?)", user.ID, GrantTargetGroup, srv.GroupID, targetUser, n).First(&g)
+	if g.ID != 0 {
+		return nil
+	}
+	return fmt.Errorf("Grant not find")
 }

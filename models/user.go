@@ -10,14 +10,10 @@ package models
 
 import (
 	"errors"
-	"regexp"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
-
-// UserAccountPattern 用户登录名正则表达式
-var UserAccountPattern = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\._-]{3,15}$`)
 
 // User user model
 type User struct {
@@ -35,7 +31,7 @@ func (u *User) BeforeSave() (err error) {
 	if len(u.Nickname) == 0 {
 		u.Nickname = u.Account
 	}
-	if !UserAccountPattern.MatchString(u.Account) {
+	if !NamePattern.MatchString(u.Account) {
 		err = errors.New(`invalid field user.account, allows 3~15 letters, numbers, "_" or "-"`)
 	}
 	return

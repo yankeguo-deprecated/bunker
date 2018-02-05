@@ -9,7 +9,10 @@
 package bunker
 
 import (
+	"errors"
+	"fmt"
 	"strings"
+	"time"
 
 	"golang.org/x/crypto/ssh"
 	"ireul.com/bunker/models"
@@ -111,8 +114,9 @@ func (b *Bunker) CreateUser(option CreateUserOption) (err error) {
 
 // CreateServerOption option to create a server
 type CreateServerOption struct {
-	Name    string
-	Address string
+	GroupName string
+	Name      string
+	Address   string
 }
 
 // CreateServer create a server
@@ -120,12 +124,79 @@ func (b *Bunker) CreateServer(option CreateServerOption) (err error) {
 	if err = b.ensureDB(); err != nil {
 		return
 	}
+	var g *models.Group
+	if g, err = b.db.EnsureGroup(option.GroupName); err != nil {
+		return
+	}
 	r := &models.Server{
+		GroupID: g.ID,
 		Name:    option.Name,
 		Address: option.Address,
 	}
 	if err = b.db.Create(r).Error; err != nil {
 		return
+	}
+	return
+}
+
+// CreateGrantOption option to create a server
+type CreateGrantOption struct {
+	User       string
+	Server     string
+	Group      string
+	TargetUser string
+	ExpiresIn  uint
+}
+
+// CreateGrant create a grant
+func (b *Bunker) CreateGrant(option CreateGrantOption) (err error) {
+	if err = b.ensureDB(); err != nil {
+		return
+	}
+	if (len(option.Server) == 0 && len(option.Group) == 0) || (len(option.Server) != 0 && len(option.Group) != 0) {
+		err = errors.New("invalid parameters, choose 'server' or 'group'")
+		return
+	}
+	var e *time.Time
+	if option.ExpiresIn > 0 {
+		_e := time.Now().Add(time.Duration(option.ExpiresIn) * time.Second)
+		e = &_e
+	}
+	u := models.User{}
+	if err = b.db.Find(&u, "account = ?", option.User).Error; err != nil || u.ID == 0 {
+		err = fmt.Errorf("user %s not found", option.User)
+		return
+	}
+	if len(option.Server) > 0 {
+		s := models.Server{}
+		if err = b.db.Find(&s, "name = ?", option.Server).Error; err != nil || s.ID == 0 {
+			err = fmt.Errorf("server %s not found", option.Server)
+			return
+		}
+		a := models.Grant{}
+		err = b.db.Where(map[string]interface{}{
+			"user_id":     u.ID,
+			"target_id":   s.ID,
+			"target_type": models.GrantTargetServer,
+			"target_user": option.TargetUser,
+		}).Assign(map[string]interface{}{
+			"expires_at": e,
+		}).FirstOrCreate(&a).Error
+	} else {
+		s := models.Group{}
+		if err = b.db.Find(&s, "name = ?", option.Group).Error; err != nil || s.ID == 0 {
+			err = fmt.Errorf("server %s not found", option.Server)
+			return
+		}
+		a := models.Grant{}
+		err = b.db.Where(map[string]interface{}{
+			"user_id":     u.ID,
+			"target_id":   s.ID,
+			"target_type": models.GrantTargetGroup,
+			"target_user": option.TargetUser,
+		}).Assign(map[string]interface{}{
+			"expires_at": e,
+		}).FirstOrCreate(&a).Error
 	}
 	return
 }
