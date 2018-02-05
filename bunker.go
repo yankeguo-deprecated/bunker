@@ -114,9 +114,9 @@ func (b *Bunker) CreateUser(option CreateUserOption) (err error) {
 
 // CreateServerOption option to create a server
 type CreateServerOption struct {
-	GroupName string
-	Name      string
-	Address   string
+	Group   string
+	Name    string
+	Address string
 }
 
 // CreateServer create a server
@@ -125,7 +125,7 @@ func (b *Bunker) CreateServer(option CreateServerOption) (err error) {
 		return
 	}
 	var g *models.Group
-	if g, err = b.db.EnsureGroup(option.GroupName); err != nil {
+	if g, err = b.db.EnsureGroup(option.Group); err != nil {
 		return
 	}
 	r := &models.Server{
