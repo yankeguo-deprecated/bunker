@@ -18,6 +18,10 @@ import (
 	"ireul.com/bunker/routes"
 	"ireul.com/bunker/types"
 	"ireul.com/web"
+	"ireul.com/web/cache"
+	_ "ireul.com/web/cache/redis" // redis cache adapter
+	"ireul.com/web/session"
+	_ "ireul.com/web/session/redis" // redis session adapter
 )
 
 var (
@@ -54,8 +58,24 @@ func (h *HTTP) ListenAndServe() (err error) {
 		h.web.SetEnv(h.Config.Env)
 		h.web.Use(web.Logger())
 		h.web.Use(web.Recovery())
+		h.web.Use(cache.Cacher(cache.Options{
+			Adapter:       "redis",
+			AdapterConfig: h.Config.Redis.URL,
+		}))
+		h.web.Use(session.Sessioner(session.Options{
+			Adapter:        "redis",
+			AdapterConfig:  h.Config.Redis.URL,
+			CookieName:     "bunker_session",
+			Secure:         h.web.Env() == web.PROD,
+			Gclifetime:     3600,
+			CookieLifeTime: 3600,
+			Maxlifetime:    3600,
+		}))
 		h.web.Use(web.Static("public", web.StaticOptions{BinFS: h.web.Env() != web.DEV}))
-		h.web.Use(web.Renderer(web.RenderOptions{BinFS: h.web.Env() != web.DEV}))
+		h.web.Use(web.Renderer(web.RenderOptions{
+			Directory: "views",
+			BinFS:     h.web.Env() != web.DEV,
+		}))
 		h.web.Map(h.Config)
 		h.web.Map(h.db)
 		routes.Mount(h.web)

@@ -17,7 +17,6 @@ import (
 	"ireul.com/bunker/types"
 	"ireul.com/bunker/utils"
 	"ireul.com/cli"
-	_ "ireul.com/mysql"
 )
 
 var migrateCommand = cli.Command{

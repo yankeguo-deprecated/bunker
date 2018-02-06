@@ -18,6 +18,8 @@ import (
 	"ireul.com/bunker/models"
 	"ireul.com/bunker/types"
 	"ireul.com/bunker/utils"
+
+	_ "ireul.com/mysql" // mysql adapter
 )
 
 // VERSION version string of current source code

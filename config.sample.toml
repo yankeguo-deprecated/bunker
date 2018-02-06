@@ -1,7 +1,10 @@
 env = "development"
 domain = "example.com"
+title = "Bunker System"
 [db]
 url = "root@tcp(localhost:3306)/bunker_dev?parseTime=true&charset=utf8mb4,utf8"
+[redis]
+url = "redis://localhost:6379"
 [http]
 host = "localhost"
 port = 3000
