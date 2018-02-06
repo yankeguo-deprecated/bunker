@@ -9,6 +9,7 @@
 package routes
 
 import (
+	"ireul.com/bunker/models"
 	"ireul.com/bunker/types"
 	"ireul.com/web"
 	"ireul.com/web/session"
@@ -17,12 +18,13 @@ import (
 // Mount mount all routes
 func Mount(w *web.Web) {
 	w.Use(GeneralFilter)
-	w.Get("/", index)
-	w.Get("/login", login)
-	w.Post("/login", login)
+	w.Use(Authenticator())
+	w.Get("/", MustSignedIn(), index)
+	w.Get("/login", MustNotSignedIn(), login)
+	w.Post("/login", MustNotSignedIn(), login)
 }
 
 // GeneralFilter the general filter
-func GeneralFilter(ctx *web.Context, cfg types.Config, sess session.Store) {
+func GeneralFilter(ctx *web.Context, cfg types.Config, sess session.Store, db *models.DB) {
 	ctx.Data["Config"] = cfg
 }
