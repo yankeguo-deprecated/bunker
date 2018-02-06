@@ -20,6 +20,7 @@ import (
 	"ireul.com/web"
 	"ireul.com/web/cache"
 	_ "ireul.com/web/cache/redis" // redis cache adapter
+	"ireul.com/web/csrf"
 	"ireul.com/web/session"
 	_ "ireul.com/web/session/redis" // redis session adapter
 )
@@ -56,8 +57,15 @@ func (h *HTTP) ListenAndServe() (err error) {
 	if h.web == nil {
 		h.web = web.New()
 		h.web.SetEnv(h.Config.Env)
+		h.web.Map(h.Config)
+		h.web.Map(h.db)
 		h.web.Use(web.Logger())
 		h.web.Use(web.Recovery())
+		h.web.Use(web.Static("public", web.StaticOptions{BinFS: h.web.Env() != web.DEV}))
+		h.web.Use(web.Renderer(web.RenderOptions{
+			Directory: "views",
+			BinFS:     h.web.Env() != web.DEV,
+		}))
 		h.web.Use(cache.Cacher(cache.Options{
 			Adapter:       "redis",
 			AdapterConfig: h.Config.Redis.URL,
@@ -71,13 +79,7 @@ func (h *HTTP) ListenAndServe() (err error) {
 			CookieLifeTime: 3600,
 			Maxlifetime:    3600,
 		}))
-		h.web.Use(web.Static("public", web.StaticOptions{BinFS: h.web.Env() != web.DEV}))
-		h.web.Use(web.Renderer(web.RenderOptions{
-			Directory: "views",
-			BinFS:     h.web.Env() != web.DEV,
-		}))
-		h.web.Map(h.Config)
-		h.web.Map(h.db)
+		h.web.Use(csrf.Csrfer(csrf.Options{Secret: h.Config.Secret}))
 		routes.Mount(h.web)
 	}
 	// create the http.Server

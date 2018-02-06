@@ -1,4 +1,5 @@
 env = "development"
+secret = "abc123"
 domain = "example.com"
 title = "Bunker System"
 [db]

@@ -11,6 +11,7 @@ package types
 // Config config struct for Bunker, mapped to config.yaml
 type Config struct {
 	Env    string      `toml:"env"`    // application environment
+	Secret string      `toml:"secret"` // secret of CSRF
 	Title  string      `toml:"title"`  // site title
 	Domain string      `toml:"domain"` // domain name for this site, for display
 	DB     DBConfig    `toml:"db"`     // db config
