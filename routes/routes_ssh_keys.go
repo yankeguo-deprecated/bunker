@@ -79,7 +79,7 @@ func PostSSHKeyAdd(ctx *web.Context, a Auth, f SSHKeyAddForm, ferrs binding.Erro
 		f.Name = strings.TrimSpace(c)
 	}
 	if len(f.Name) == 0 {
-		f.Name = "未命名"
+		f.Name = "default"
 	}
 	fp := strings.TrimSpace(ssh.FingerprintSHA256(p))
 	var count uint
