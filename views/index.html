@@ -24,9 +24,13 @@
                     <code>SSH 公钥</code>&nbsp;添加</div>
             </div>
         </div>
-        {{end}}
-    </div>
-    {{ template "common/foot" }}
+        {{end}} {{if .Auth.User.IsBlocked}}
+        <div class="row">
+            <div class="col-md-12">
+                <div class="alert alert-danger" role="alert">当前用户已经被禁用，将无法通过 SSH 访问目标服务器</div>
+            </div>
+        </div>
+        {{end}} {{ template "common/foot" }}
 </body>
 
 </html>
