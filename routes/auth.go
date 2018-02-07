@@ -44,10 +44,13 @@ func (a *auth) User() *models.User {
 	if a.fetched {
 		return a.user
 	}
-	if userID, ok := a.sess.Get("user_id").(string); ok {
+	if userID, ok := a.sess.Get("user_id").(string); ok && len(userID) > 0 {
 		u := models.User{}
 		if err := a.db.First(&u, userID).Error; err == nil && u.ID != 0 {
 			a.user = &u
+		} else {
+			// clear user_id if failed to find
+			a.SetUser(nil)
 		}
 	}
 	a.fetched = true
@@ -69,8 +72,8 @@ func Authenticator() web.Handler {
 	return func(ctx *web.Context, sess session.Store, db *models.DB) {
 		a := &auth{sess: sess, db: db}
 		// inject
-		var _a Auth
-		ctx.MapTo(a, &_a)
+		ctx.Data["Auth"] = a
+		ctx.MapTo(a, (*Auth)(nil))
 		ctx.Next()
 	}
 }

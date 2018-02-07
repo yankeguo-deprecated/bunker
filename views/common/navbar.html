@@ -1,0 +1,106 @@
+<!--
+ Copyright (c) 2018 Yanke Guo <guoyk.cn@gmail.com>
+ 
+ This software is released under the MIT License.
+ https://opensource.org/licenses/MIT
+-->
+
+<!-- Logout Modal -->
+<div class="modal fade" id="bunker-logout-modal" tabindex="-1" role="dialog" aria-labelledby="bunker-logout-modal-label">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <label class="modal-title" id="bunker-logout-modal-label">退出登录</label>
+            </div>
+            <div class="modal-body">
+                <form action="/logout" method="post">
+                    {{.CSRF.CreateHTML}}
+                    <div class="from-group">
+                        <label class="text-danger">确定要退出登录么？</label>
+                    </div>
+                    <div class="from-group text-right">
+                        <input class="btn btn-danger btn-sm" type="submit" value="退出登录" />
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bunker-navbar-collapse" aria-expanded="false">
+                <span class="sr-only">Toggle</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">{{.Config.Title}}</a>
+        </div>
+        <div class="collapse navbar-collapse" id="bunker-navbar-collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a href="#">Link
+                        <span class="sr-only">(current)</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#">Link</a>
+                </li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Dropdown
+                        <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a href="#">Action</a>
+                        </li>
+                        <li>
+                            <a href="#">Another action</a>
+                        </li>
+                        <li>
+                            <a href="#">Something else here</a>
+                        </li>
+                        <li role="separator" class="divider"></li>
+                        <li>
+                            <a href="#">Separated link</a>
+                        </li>
+                        <li role="separator" class="divider"></li>
+                        <li>
+                            <a href="#">One more separated link</a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a href="#">Link</a>
+                </li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">当前用户:&nbsp;{{.Auth.User.Account}}
+                        <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a href="#">Action</a>
+                        </li>
+                        <li>
+                            <a href="#">Another action</a>
+                        </li>
+                        <li>
+                            <a href="#">Something else here</a>
+                        </li>
+                        <li role="separator" class="divider"></li>
+                        <li>
+                            <a href="#" data-toggle="modal" data-target="#bunker-logout-modal">退出登录</a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>

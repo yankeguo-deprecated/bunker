@@ -20,6 +20,7 @@ import (
 	"ireul.com/web"
 	"ireul.com/web/cache"
 	_ "ireul.com/web/cache/redis" // redis cache adapter
+	"ireul.com/web/captcha"
 	"ireul.com/web/csrf"
 	"ireul.com/web/session"
 	_ "ireul.com/web/session/redis" // redis session adapter
@@ -80,6 +81,7 @@ func (h *HTTP) ListenAndServe() (err error) {
 			Maxlifetime:    3600,
 		}))
 		h.web.Use(csrf.Csrfer(csrf.Options{Secret: h.Config.Secret}))
+		h.web.Use(captcha.Captchaer())
 		routes.Mount(h.web)
 	}
 	// create the http.Server

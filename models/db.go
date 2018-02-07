@@ -9,11 +9,13 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"time"
 
 	"ireul.com/bunker/types"
+	_ "ireul.com/mysql" // mysql adapter
 	"ireul.com/orm"
 )
 
@@ -56,16 +58,25 @@ func (w *DB) AutoMigrate() error {
 
 // Touch update the UsedAt field
 func (w *DB) Touch(ms ...interface{}) {
+	n := time.Now()
 	for _, m := range ms {
-		w.Model(m).UpdateColumn("UsedAt", time.Now())
+		w.Model(m).UpdateColumn("UsedAt", n)
 	}
 }
 
+// FindUserByLogin find user by account and password
+func (w *DB) FindUserByLogin(account string, password string) (*User, error) {
+	u := User{}
+	if err := w.First(&u, "account = ?", account).Error; err != nil || u.ID == 0 || !u.CheckPassword(password) {
+		return nil, errors.New("invalid credentials")
+	}
+	return &u, nil
+}
+
 // EnsureGroup ensure a server group
-func (w *DB) EnsureGroup(name string) (g *Group, err error) {
-	g = &Group{}
-	err = w.FirstOrCreate(g, map[string]interface{}{"name": name}).Error
-	return
+func (w *DB) EnsureGroup(name string) (*Group, error) {
+	n := &Group{}
+	return n, w.FirstOrCreate(n, map[string]interface{}{"name": name}).Error
 }
 
 // CheckGrant check target grant

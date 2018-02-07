@@ -5,6 +5,10 @@
  * https://opensource.org/licenses/MIT
  */
 
-div.dialog {
-    padding-top: 12rem;
+body {
+    padding-top: 70px;
+}
+
+img.captcha-img {
+    height: 64px;
 }
