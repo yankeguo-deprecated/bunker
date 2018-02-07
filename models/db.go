@@ -95,3 +95,9 @@ func (w *DB) CheckGrant(user User, srv Server, targetUser string) (err error) {
 	}
 	return fmt.Errorf("Grant not find")
 }
+
+// CountUserSSHKeys count user ssh keys
+func (w *DB) CountUserSSHKeys(u *User) (count uint) {
+	w.Model(&Key{}).Where("user_id = ?", u.ID).Count(&count)
+	return
+}

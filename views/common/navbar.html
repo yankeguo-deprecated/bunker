@@ -18,11 +18,12 @@
             <div class="modal-body">
                 <form action="/logout" method="post">
                     {{.CSRF.CreateHTML}}
-                    <div class="from-group">
+                    <div class="form-group">
                         <label class="text-danger">确定要退出登录么？</label>
                     </div>
-                    <div class="from-group text-right">
-                        <input class="btn btn-danger btn-sm" type="submit" value="退出登录" />
+                    <div class="form-group text-right">
+                        <button class="btn btn-danger btn-sm" type="submit">
+                            <i class="fa fa-sign-out" aria-hidden="true"></i>&nbsp;退出登录</button>
                     </div>
                 </form>
             </div>
@@ -86,17 +87,17 @@
                     </a>
                     <ul class="dropdown-menu">
                         <li>
-                            <a href="#">Action</a>
+                            <a href="/profile">
+                                <i class="fa fa-user-circle" aria-hidden="true"></i>&nbsp;个人信息</a>
                         </li>
                         <li>
-                            <a href="#">Another action</a>
-                        </li>
-                        <li>
-                            <a href="#">Something else here</a>
+                            <a href="/ssh-keys">
+                                <i class="fa fa-key" aria-hidden="true"></i>&nbsp;SSH 公钥</a>
                         </li>
                         <li role="separator" class="divider"></li>
                         <li>
-                            <a href="#" data-toggle="modal" data-target="#bunker-logout-modal">退出登录</a>
+                            <a href="#" data-toggle="modal" data-target="#bunker-logout-modal">
+                                <i class="fa fa-sign-out" aria-hidden="true"></i>&nbsp;退出登录</a>
                         </li>
                     </ul>
                 </li>

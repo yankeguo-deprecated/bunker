@@ -18,11 +18,6 @@ import (
 	"ireul.com/web/session"
 )
 
-// GetIndex get index page
-func GetIndex(ctx *web.Context, r web.Render) {
-	ctx.HTML(200, "index")
-}
-
 // GetLogin get login page
 func GetLogin(ctx *web.Context) {
 	ctx.HTML(200, "login")
@@ -30,8 +25,8 @@ func GetLogin(ctx *web.Context) {
 
 // LoginForm the login form
 type LoginForm struct {
-	Account  string `binding:"Required"`
-	Password string `binding:"Required"`
+	Account  string `form:"account" binding:"Required"`
+	Password string `form:"password" binding:"Required"`
 }
 
 // PostLogin get login page

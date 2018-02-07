@@ -10,23 +10,20 @@
 
 <head>
     {{ template "common/head" }}
-    <title>Bunker - 工作台</title>
+    <title>Bunker - 个人信息</title>
 </head>
 
 <body>
     {{ template "common/navbar" .}}
     <div class="container">
-        {{if .MissingSSHKeys}}
         <div class="row">
             <div class="col-md-12">
-                <div class="alert alert-warning" role="alert">没有配置 SSH 公钥，请前往&nbsp;
-                    <code>当前用户</code>&nbsp;->&nbsp;
-                    <code>SSH 公钥</code>&nbsp;添加</div>
+                <div class="page-header">
+                </div>
             </div>
         </div>
-        {{end}}
     </div>
     {{ template "common/foot" }}
 </body>
 
-</html>
+</html>>

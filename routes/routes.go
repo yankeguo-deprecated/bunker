@@ -23,6 +23,12 @@ func Mount(w *web.Web) {
 	w.Get("/login", MustNotSignedIn(), GetLogin)
 	w.Post("/login", MustNotSignedIn(), csrf.Validate, binding.Form(LoginForm{}), PostLogin)
 	w.Post("/logout", MustSignedIn(), csrf.Validate, PostLogout)
+	w.Get("/profile", MustSignedIn(), GetProfile)
+	w.Post("/profile/change-password", MustSignedIn(), csrf.Validate, binding.Form(ChangePasswordForm{}), PostChangePassword)
+	w.Post("/profile/change-nickname", MustSignedIn(), csrf.Validate, binding.Form(ChangeNicknameForm{}), PostChangeNickname)
+	w.Get("/ssh-keys", MustSignedIn(), GetSSHKeys)
+	w.Post("/ssh-keys/add", MustSignedIn(), csrf.Validate, binding.Form(SSHKeyAddForm{}), PostSSHKeyAdd)
+	w.Post("/ssh-keys/destroy", MustSignedIn(), csrf.Validate, binding.Form(SSHKeyDestroyForm{}), PostSSHKeyDestroy)
 }
 
 // GeneralFilter the general filter

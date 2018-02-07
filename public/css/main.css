@@ -12,3 +12,15 @@ body {
 img.captcha-img {
     height: 64px;
 }
+
+div.bunker-toolbar {
+    padding-bottom: 1rem;
+}
+
+div.page-header {
+    margin-bottom: 0;
+}
+
+hr {
+    margin-bottom: 0px;
+}
