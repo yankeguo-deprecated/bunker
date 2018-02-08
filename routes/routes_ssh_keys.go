@@ -15,7 +15,6 @@ import (
 
 	"golang.org/x/crypto/ssh"
 	"ireul.com/bunker/models"
-	"ireul.com/timeago"
 	"ireul.com/web"
 	"ireul.com/web/binding"
 	"ireul.com/web/session"
@@ -38,16 +37,12 @@ func GetSSHKeys(ctx *web.Context, a Auth, db *models.DB) {
 	db.Where("user_id = ?", a.User().ID).Find(&keys)
 
 	for _, k := range keys {
-		at := "从未使用"
-		if k.UsedAt != nil {
-			at = timeago.Chinese.Format(*k.UsedAt)
-		}
 		items = append(items, SSHKeyItem{
 			ID:          k.ID,
 			Name:        k.Name,
 			Fingerprint: k.Fingerprint,
-			UsedAt:      at,
-			CreatedAt:   timeago.Chinese.Format(k.CreatedAt),
+			UsedAt:      TimeAgo(k.UsedAt),
+			CreatedAt:   TimeAgo(&k.CreatedAt),
 		})
 	}
 
