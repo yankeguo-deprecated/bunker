@@ -94,9 +94,9 @@ var createServerCommand = cli.Command{
 			return
 		}
 		return b.CreateServer(bunker.CreateServerOption{
-			Name:    ctx.String("name"),
-			Address: ctx.String("address"),
-			Group:   ctx.String("group"),
+			Name:      ctx.String("name"),
+			Address:   ctx.String("address"),
+			GroupName: ctx.String("group"),
 		})
 	},
 }
@@ -132,8 +132,8 @@ var createGrantCommand = cli.Command{
 			return
 		}
 		return b.CreateGrant(bunker.CreateGrantOption{
-			Group:      ctx.String("group"),
-			Server:     ctx.String("server"),
+			GroupName:  ctx.String("group"),
+			ServerName: ctx.String("server"),
 			User:       ctx.String("user"),
 			TargetUser: ctx.String("target-user"),
 			ExpiresIn:  ctx.Uint("expires-in"),

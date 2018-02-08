@@ -28,6 +28,10 @@ func Mount(w *web.Web) {
 	w.Get("/ssh-keys", MustSignedIn(), GetSSHKeys)
 	w.Post("/ssh-keys/add", MustSignedIn(), csrf.Validate, binding.Form(SSHKeyAddForm{}), PostSSHKeyAdd)
 	w.Post("/ssh-keys/destroy", MustSignedIn(), csrf.Validate, binding.Form(SSHKeyDestroyForm{}), PostSSHKeyDestroy)
+	w.Get("/servers", MustSignedInAsAdmin(), GetServers)
+	w.Post("/servers/add", MustSignedInAsAdmin(), csrf.Validate, binding.Form(ServerAddForm{}), PostServerAdd)
+	w.Get("/users", MustSignedInAsAdmin(), GetUsers)
+	w.Post("/users/add", MustSignedInAsAdmin(), csrf.Validate, binding.Form(UserAddForm{}), PostUserAdd)
 }
 
 // GeneralFilter the general filter

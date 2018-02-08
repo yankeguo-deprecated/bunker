@@ -20,7 +20,7 @@ import (
 )
 
 // NamePattern general name pattern
-var NamePattern = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\._-]{3,15}$`)
+var NamePattern = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\._-]{3,}$`)
 
 // Model basic model, not using orm.Model, no deletedAt
 type Model struct {
@@ -49,7 +49,6 @@ func NewDB(cfg types.Config) (db *DB, err error) {
 func (w *DB) AutoMigrate() error {
 	return w.DB.AutoMigrate(
 		Server{},
-		Group{},
 		User{},
 		Key{},
 		Grant{},
@@ -73,23 +72,18 @@ func (w *DB) FindUserByLogin(account string, password string) (*User, error) {
 	return &u, nil
 }
 
-// EnsureGroup ensure a server group
-func (w *DB) EnsureGroup(name string) (*Group, error) {
-	n := &Group{}
-	return n, w.FirstOrCreate(n, map[string]interface{}{"name": name}).Error
-}
-
 // CheckGrant check target grant
 func (w *DB) CheckGrant(user User, srv Server, targetUser string) (err error) {
-	n := time.Now()
 	g := Grant{}
-	// check user -> server grants
-	w.Where("user_id = ? AND target_type = ? AND target_id = ? AND target_user = ? AND (expires_at IS NULL OR expires_at > ?)", user.ID, GrantTargetServer, srv.ID, targetUser, n).First(&g)
-	if g.ID != 0 {
-		return nil
-	}
-	// check user -> server group grants
-	w.Where("user_id = ? AND target_type = ? AND target_id = ? AND target_user = ? AND (expires_at IS NULL OR expires_at > ?)", user.ID, GrantTargetGroup, srv.GroupID, targetUser, n).First(&g)
+	w.Where("user_id = ? AND target_user = ? AND ((target_name = ? AND target_type = ?) OR (target_name = ? AND target_type = ?)) AND (expires_at IS NULL OR expires_at > ?)",
+		user.ID,
+		targetUser,
+		srv.Name,
+		GrantTargetServer,
+		srv.GroupName,
+		GrantTargetGroup,
+		time.Now(),
+	).First(&g)
 	if g.ID != 0 {
 		return nil
 	}

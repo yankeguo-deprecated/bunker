@@ -18,8 +18,14 @@ import (
 
 // GetProfile get change password
 func GetProfile(ctx *web.Context, a Auth) {
+	ctx.Data["NavClass_Profile"] = "active"
 	ctx.Data["CreatedAt"] = TimeAgo(&a.User().CreatedAt)
 	ctx.Data["UsedAt"] = TimeAgo(a.User().UsedAt)
+	if a.User().IsAdmin {
+		ctx.Data["UserType"] = "管理员"
+	} else {
+		ctx.Data["UserType"] = "普通用户"
+	}
 	ctx.HTML(http.StatusOK, "profile")
 }
 

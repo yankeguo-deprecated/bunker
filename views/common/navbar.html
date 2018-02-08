@@ -43,56 +43,27 @@
             <a class="navbar-brand" href="/">{{.Config.Title}}</a>
         </div>
         <div class="collapse navbar-collapse" id="bunker-navbar-collapse">
-            <!--
+            {{if .Auth.User.IsAdmin}}
             <ul class="nav navbar-nav">
-                <li class="active">
-                    <a href="#">Link
-                        <span class="sr-only">(current)</span>
-                    </a>
+                <li class="{{.NavClass_Servers}}">
+                    <a href="/servers">服务器管理</a>
                 </li>
-                <li>
-                    <a href="#">Link</a>
-                </li>
-                <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Dropdown
-                        <span class="caret"></span>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a href="#">Action</a>
-                        </li>
-                        <li>
-                            <a href="#">Another action</a>
-                        </li>
-                        <li>
-                            <a href="#">Something else here</a>
-                        </li>
-                        <li role="separator" class="divider"></li>
-                        <li>
-                            <a href="#">Separated link</a>
-                        </li>
-                        <li role="separator" class="divider"></li>
-                        <li>
-                            <a href="#">One more separated link</a>
-                        </li>
-                    </ul>
+                <li class="{{.NavClass_Users}}">
+                    <a href="/users">用户管理</a>
                 </li>
             </ul>
-            -->
+            {{end}}
             <ul class="nav navbar-nav navbar-right">
-                <li>
-                    <a href="#">Link</a>
-                </li>
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">当前用户:&nbsp;{{.Auth.User.Account}}
                         <span class="caret"></span>
                     </a>
                     <ul class="dropdown-menu">
-                        <li>
+                        <li class="{{.NavClass_Profile}}">
                             <a href="/profile">
                                 <i class="fa fa-user-circle" aria-hidden="true"></i>&nbsp;个人信息</a>
                         </li>
-                        <li>
+                        <li class="{{.NavClass_SSHKeys}}">
                             <a href="/ssh-keys">
                                 <i class="fa fa-key" aria-hidden="true"></i>&nbsp;SSH 公钥</a>
                         </li>

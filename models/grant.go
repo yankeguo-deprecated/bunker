@@ -25,7 +25,7 @@ type Grant struct {
 	Model
 	CreaterID  uint       `orm:"not null;index" json:"createrId"`                   // created by user id
 	UserID     uint       `orm:"not null;index" json:"sourceId"`                    // user id or usergroup id
-	TargetID   uint       `orm:"not null;index:idx_grant_target" json:"targetId"`   // server id or servergroup id
+	TargetName string     `orm:"not null;index:idx_grant_target" json:"targetName"` // server id or servergroup id
 	TargetType int        `orm:"not null;index:idx_grant_target" json:"targetType"` // target type, 1 - server, 2 - servergroup
 	TargetUser string     `orm:"not null" json:"targetUser"`                        // target user
 	ExpiresAt  *time.Time `orm:"index" json:"expiresAt"`                            // grant expires at

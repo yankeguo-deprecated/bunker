@@ -1,0 +1,137 @@
+<!--
+ Copyright (c) 2018 Yanke Guo <guoyk.cn@gmail.com>
+ 
+ This software is released under the MIT License.
+ https://opensource.org/licenses/MIT
+-->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    {{ template "common/head" }}
+    <title>Bunker - 服务器管理</title>
+</head>
+
+<body>
+    {{ template "common/navbar" .}}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="page-header">
+                    <h3>
+                        <i class="fa fa-server"></i>&nbsp;服务器管理</h3>
+                    <hr/>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="edit-form" class="panel panel-default">
+                            <div class="panel-heading">
+                                新建/更新服务器
+                            </div>
+                            <div class="panel-body">
+                                <form action="/servers/add" method="post">
+                                    {{.CSRF.CreateHTML}}
+                                    <div class="form-group">
+                                        <label>名称</label>
+                                        <input type="text" class="form-control input-sm" name="name" placeholder="唯一，符合正则表达式 {{.NamePattern}}" value="{{.CurrentServerName}}"
+                                        />
+                                    </div>
+                                    <div class="form-group">
+                                        <label>分组</label>
+                                        <input type="text" class="form-control input-sm" name="group_name" placeholder="自动创建，符合正则表达式 {{.NamePattern}}" value="{{.CurrentGroupName}}"
+                                        />
+                                    </div>
+                                    <div class="form-group">
+                                        <label>地址</label>
+                                        <input type="text" class="form-control input-sm" name="address" placeholder="10.10.10.10:22" value="{{.CurrentServerAddress}}"
+                                        />
+                                    </div>
+                                    <div class="form-group">
+                                        <button class="btn btn-block btn-primary btn-sm" type="submit">
+                                            <i class="fa fa-plus-circle"></i>&nbsp;新建/更新</button> {{if .Flash.ErrorMsg}}
+                                        <span class="help-block text-danger">{{.Flash.ErrorMsg}}</span>
+                                        {{end}} {{if .Flash.SuccessMsg}}
+                                        <span class="help-block text-success">{{.Flash.SuccessMsg}}</span>
+                                        {{end}}
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                主 SSH 公钥
+                            </div>
+                            <div class="panel-body">
+                                <p>Bunker 使用一个主 SSH 密钥连接目标服务器</p>
+                                <p>请确保以下公钥存在于目标服务器的
+                                    <code>/root/.ssh/authorized_keys</code>文件中
+                                </p>
+                                <p>
+                                    <pre><code>{{.ClientPublicKey}}</code></pre>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="panel panel-default">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <td>ID</td>
+                                <td>名称</td>
+                                <td>分组</td>
+                                <td>地址</td>
+                                <td>创建时间</td>
+                                <td>更新时间</td>
+                                <td></td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{if .Servers}} {{range .Servers}}
+                            <tr>
+                                <td>{{.ID}}</td>
+                                <td>{{.Name}}</td>
+                                <td>{{.GroupName}}</td>
+                                <td>{{.Address}}</td>
+                                <td>{{.CreatedAt}}</td>
+                                <td>{{.UpdatedAt}}</td>
+                                <td>
+                                    <a class="edit-server" href="#" data-name="{{.Name}}" data-group-name="{{.GroupName}}" data-address="{{.Address}}" class="text-success">编辑</a>
+                                </td>
+                            </tr>
+                            {{end}} {{else}}
+                            <tr>
+                                <td class="text-muted text-center" colspan="7">没有服务器</td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{ template "common/foot" }}
+    <script>
+        $(window).ready(function () {
+            $("a.edit-server").click(function (e) {
+                $('input[name="name"]').val($(e.target).attr("data-name"))
+                $('input[name="group_name"]').val($(e.target).attr("data-group-name"))
+                $('input[name="address"]').val($(e.target).attr("data-address"))
+                $('input').fadeOut('fast', function () {
+                    $('input').fadeIn('fast')
+                })
+            })
+        })
+    </script>
+</body>
+
+</html>

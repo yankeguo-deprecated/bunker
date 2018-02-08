@@ -31,6 +31,7 @@ type SSHKeyItem struct {
 
 // GetSSHKeys get keys
 func GetSSHKeys(ctx *web.Context, a Auth, db *models.DB) {
+	ctx.Data["NavClass_SSHKeys"] = "active"
 	items := []SSHKeyItem{}
 	keys := []models.Key{}
 

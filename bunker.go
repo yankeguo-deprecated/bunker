@@ -114,9 +114,9 @@ func (b *Bunker) CreateUser(option CreateUserOption) (err error) {
 
 // CreateServerOption option to create a server
 type CreateServerOption struct {
-	Group   string
-	Name    string
-	Address string
+	GroupName string
+	Name      string
+	Address   string
 }
 
 // CreateServer create a server
@@ -124,14 +124,10 @@ func (b *Bunker) CreateServer(option CreateServerOption) (err error) {
 	if err = b.ensureDB(); err != nil {
 		return
 	}
-	var g *models.Group
-	if g, err = b.db.EnsureGroup(option.Group); err != nil {
-		return
-	}
 	r := &models.Server{
-		GroupID: g.ID,
-		Name:    option.Name,
-		Address: option.Address,
+		GroupName: option.GroupName,
+		Name:      option.Name,
+		Address:   option.Address,
 	}
 	if err = b.db.Create(r).Error; err != nil {
 		return
@@ -142,8 +138,8 @@ func (b *Bunker) CreateServer(option CreateServerOption) (err error) {
 // CreateGrantOption option to create a server
 type CreateGrantOption struct {
 	User       string
-	Server     string
-	Group      string
+	ServerName string
+	GroupName  string
 	TargetUser string
 	ExpiresIn  uint
 }
@@ -153,7 +149,7 @@ func (b *Bunker) CreateGrant(option CreateGrantOption) (err error) {
 	if err = b.ensureDB(); err != nil {
 		return
 	}
-	if (len(option.Server) == 0 && len(option.Group) == 0) || (len(option.Server) != 0 && len(option.Group) != 0) {
+	if (len(option.ServerName) == 0 && len(option.GroupName) == 0) || (len(option.ServerName) != 0 && len(option.GroupName) != 0) {
 		err = errors.New("invalid parameters, choose 'server' or 'group'")
 		return
 	}
@@ -167,31 +163,26 @@ func (b *Bunker) CreateGrant(option CreateGrantOption) (err error) {
 		err = fmt.Errorf("user %s not found", option.User)
 		return
 	}
-	if len(option.Server) > 0 {
+	if len(option.ServerName) > 0 {
 		s := models.Server{}
-		if err = b.db.Find(&s, "name = ?", option.Server).Error; err != nil || s.ID == 0 {
-			err = fmt.Errorf("server %s not found", option.Server)
+		if err = b.db.Find(&s, "name = ?", option.ServerName).Error; err != nil || s.ID == 0 {
+			err = fmt.Errorf("server %s not found", option.ServerName)
 			return
 		}
 		a := models.Grant{}
 		err = b.db.Where(map[string]interface{}{
 			"user_id":     u.ID,
-			"target_id":   s.ID,
+			"target_name": option.ServerName,
 			"target_type": models.GrantTargetServer,
 			"target_user": option.TargetUser,
 		}).Assign(map[string]interface{}{
 			"expires_at": e,
 		}).FirstOrCreate(&a).Error
 	} else {
-		s := models.Group{}
-		if err = b.db.Find(&s, "name = ?", option.Group).Error; err != nil || s.ID == 0 {
-			err = fmt.Errorf("server %s not found", option.Server)
-			return
-		}
 		a := models.Grant{}
 		err = b.db.Where(map[string]interface{}{
 			"user_id":     u.ID,
-			"target_id":   s.ID,
+			"target_name": option.GroupName,
 			"target_type": models.GrantTargetGroup,
 			"target_user": option.TargetUser,
 		}).Assign(map[string]interface{}{
