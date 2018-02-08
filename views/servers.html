@@ -31,19 +31,20 @@
                     <div class="col-md-12">
                         <div id="edit-form" class="panel panel-default">
                             <div class="panel-heading">
-                                新建/更新服务器
+                                添加服务器
                             </div>
                             <div class="panel-body">
                                 <form action="/servers/add" method="post">
                                     {{.CSRF.CreateHTML}}
                                     <div class="form-group">
                                         <label>名称</label>
-                                        <input type="text" class="form-control input-sm" name="name" placeholder="唯一，符合正则表达式 {{.NamePattern}}" value="{{.CurrentServerName}}"
+                                        <input type="text" class="form-control input-sm" name="name" placeholder="必须符合正则表达式 {{.NamePattern}}" value="{{.CurrentServerName}}"
                                         />
+                                        <span class="help-block">名称唯一，使用相同的名称会更新现有记录</span>
                                     </div>
                                     <div class="form-group">
                                         <label>分组</label>
-                                        <input type="text" class="form-control input-sm" name="group_name" placeholder="自动创建，符合正则表达式 {{.NamePattern}}" value="{{.CurrentGroupName}}"
+                                        <input type="text" class="form-control input-sm" name="group_name" placeholder="必须符合正则表达式 {{.NamePattern}}" value="{{.CurrentGroupName}}"
                                         />
                                     </div>
                                     <div class="form-group">
@@ -53,7 +54,7 @@
                                     </div>
                                     <div class="form-group">
                                         <button class="btn btn-block btn-primary btn-sm" type="submit">
-                                            <i class="fa fa-plus-circle"></i>&nbsp;新建/更新</button> {{if .Flash.ErrorMsg}}
+                                            <i class="fa fa-plus-circle"></i>&nbsp;添加服务器</button> {{if .Flash.ErrorMsg}}
                                         <span class="help-block text-danger">{{.Flash.ErrorMsg}}</span>
                                         {{end}} {{if .Flash.SuccessMsg}}
                                         <span class="help-block text-success">{{.Flash.SuccessMsg}}</span>
