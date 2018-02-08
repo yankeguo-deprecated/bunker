@@ -100,6 +100,7 @@ func (s *SSHD) createPublicKeyCallback() func(ssh.ConnMetadata, ssh.PublicKey) (
 		if err = s.db.CheckGrant(u, r, tu); err != nil {
 			return nil, fmt.Errorf("no permission to connect %s@%s", tu, th)
 		}
+		s.db.Touch(&r)
 		return &ssh.Permissions{
 			Extensions: map[string]string{
 				sshdBunkerTargetUser:    tu,

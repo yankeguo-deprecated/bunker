@@ -50,6 +50,7 @@ type ServerItem struct {
 	Address   string
 	CreatedAt string
 	UpdatedAt string
+	UsedAt    string
 }
 
 // ServerItems slice of server item
@@ -81,6 +82,7 @@ func GetServers(ctx *web.Context, cfg types.Config, db *models.DB, sess session.
 			Address:   s.Address,
 			CreatedAt: TimeAgo(&s.CreatedAt),
 			UpdatedAt: TimeAgo(&s.UpdatedAt),
+			UsedAt:    TimeAgo(s.UsedAt),
 		})
 	}
 

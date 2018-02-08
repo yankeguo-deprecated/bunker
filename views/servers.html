@@ -15,6 +15,53 @@
 
 <body>
     {{ template "common/navbar" .}}
+
+    <!-- Server Destroy Modal -->
+    <div class="modal fade" id="bunker-server-destroy-modal" tabindex="-1" role="dialog" aria-labelledby="bunker-server-destroy-modal-label">
+        <div class="modal-dialog modal-sm" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <label class="modal-title" id="bunker-server-destroy-modal-label">删除服务器</label>
+                </div>
+                <div class="modal-body">
+                    <form action="/servers/destroy" method="post">
+                        {{.CSRF.CreateHTML}}
+                        <input id="server-destroy-input" type="hidden" name="id" value="" />
+                        <div class="form-group">
+                            <label class="text-danger">确定要删除该服务器么？</label>
+                        </div>
+                        <div class="form-group">
+                            <label>名称</label>
+                            <p id="delete-name-label" class="form-control-static"></p>
+                        </div>
+                        <div class="form-group">
+                            <label>分组</label>
+                            <p id="delete-group-name-label" class="form-control-static"></p>
+                        </div>
+                        <div class="form-group">
+                            <label>地址</label>
+                            <p id="delete-address-label" class="form-control-static"></p>
+                        </div>
+                        <div class="form-group">
+                            <label>最近使用</label>
+                            <p id="delete-used-at-label" class="form-control-static"></p>
+                        </div>
+                        <hr/>
+                        <div class="form-group text-right">
+                            <button class="btn btn-danger btn-block btn-sm" type="submit">
+                                <i class="fa fa-delete" aria-hidden="true"></i>&nbsp;删除</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
     <div class="container">
         <div class="row">
             <div class="col-md-12">
@@ -91,8 +138,8 @@
                                 <td>名称</td>
                                 <td>分组</td>
                                 <td>地址</td>
-                                <td>创建时间</td>
                                 <td>更新时间</td>
+                                <td>最后使用</td>
                                 <td></td>
                             </tr>
                         </thead>
@@ -103,10 +150,14 @@
                                 <td>{{.Name}}</td>
                                 <td>{{.GroupName}}</td>
                                 <td>{{.Address}}</td>
-                                <td>{{.CreatedAt}}</td>
                                 <td>{{.UpdatedAt}}</td>
+                                <td>{{.UsedAt}}</td>
                                 <td>
-                                    <a class="edit-server" href="#" data-name="{{.Name}}" data-group-name="{{.GroupName}}" data-address="{{.Address}}" class="text-success">编辑</a>
+                                    <a class="edit-server text-success" href="#" data-name="{{.Name}}" data-group-name="{{.GroupName}}" data-address="{{.Address}}">编辑</a>
+                                    &nbsp;|&nbsp;
+                                    <a data-toggle="modal" data-target="#bunker-server-destroy-modal" class="destroy-server text-danger" href="#" data-name="{{.Name}}"
+                                        data-group-name="{{.GroupName}}" data-address="{{.Address}}" data-used-at="{{.UsedAt}}"
+                                        data-id="{{.ID}}">删除</a>
                                 </td>
                             </tr>
                             {{end}} {{else}}
@@ -130,6 +181,13 @@
                 $('input').fadeOut('fast', function () {
                     $('input').fadeIn('fast')
                 })
+            })
+            $("a.destroy-server").click(function (e) {
+                $('input[name="id"]').val($(e.target).attr('data-id'))
+                $('#delete-name-label').text($(e.target).attr('data-name'))
+                $('#delete-group-name-label').text($(e.target).attr('data-group-name'))
+                $('#delete-address-label').text($(e.target).attr('data-address'))
+                $('#delete-used-at-label').text($(e.target).attr('data-used-at'))
             })
         })
     </script>
