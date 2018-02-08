@@ -14,7 +14,34 @@
 </head>
 
 <body>
-    {{ template "common/navbar" .}} {{ template "common/ssh-keys-add" .}} {{ template "common/ssh-keys-destroy" .}}
+    {{ template "common/navbar" .}}
+
+    <!-- SSHKey Destroy Modal -->
+    <div class="modal fade" id="bunker-sshkey-destroy-modal" tabindex="-1" role="dialog" aria-labelledby="bunker-sshkey-destroy-modal-label">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <label class="modal-title" id="bunker-sshkey-destroy-modal-label">删除 SSH 公钥</label>
+                </div>
+                <div class="modal-body">
+                    <form action="/ssh-keys/destroy" method="post">
+                        {{.CSRF.CreateHTML}}
+                        <input id="sshkey-destroy-input" type="hidden" name="key_id" value="" />
+                        <div class="form-group">
+                            <label class="text-danger">确定要删除该 SSH 公钥么？</label>
+                        </div>
+                        <div class="form-group text-right">
+                            <button class="btn btn-danger btn-sm" type="submit">
+                                <i class="fa fa-delete" aria-hidden="true"></i>&nbsp;删除</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="container">
         <div class="row">
@@ -27,23 +54,34 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-md-12 bunker-toolbar">
-                <div class="btn-group">
-                    <button class="btn btn-success btn-sm" data-toggle="modal" data-target="#bunker-sshkey-add-modal">
-                        <i class="fa fa-plus-circle" aria-hidden="true"></i>&nbsp;添加
-                    </button>
-                </div>
+            <div class="col-md-12">
+                <h4>添加 SSH 公钥</h4>
+                <form class="form-inline row" action="/ssh-keys/add" method="post">
+                    {{.CSRF.CreateHTML}}
+                    <div class="form-group col-md-2">
+                        <label class="sr-only">名称</label>
+                        <input class="form-control input-sm" style="width: 100%;" type="text" name="name" placeholder="名称" />
+                    </div>
+                    <div class="form-group col-md-9">
+                        <label class="sr-only">公钥</label>
+                        <input class="form-control input-sm" style="width: 100%;" type="text" name="public_key" placeholder="ssh-rsa AAAAB3NzaC1yc2EAAAADAQ......"
+                        /> {{if .Flash.ErrorMsg}}
+                        <span class="help-block text-danger">
+                            {{.Flash.ErrorMsg}}
+                        </span>
+                        {{end}}
+                    </div>
+                    <div class="form-group col-md-1 text-right">
+                        <button class="btn btn-success btn-sm" type="submit">
+                            <i class="fa fa-plus-circle" aria-hidden="true"></i>&nbsp;添加</button>
+                    </div>
+                </form>
+                <hr/>
             </div>
         </div>
-        {{if .Flash.ErrorMsg}}
-        <div class="row">
-            <div class="col-md-12 bunker-toolbar text-danger">
-                {{.Flash.ErrorMsg}}
-            </div>
-        </div>
-        {{end}}
         <div class="row">
             <div class="col-md-12">
+                <h4>当前 SSH 公钥</h4>
                 <div class="panel panel-default">
                     <table class="table table-hover">
                         {{if .SSHKeys}}

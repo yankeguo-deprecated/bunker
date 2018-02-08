@@ -9,6 +9,7 @@
 package routes
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -57,43 +58,50 @@ func GetSSHKeys(ctx *web.Context, a Auth, db *models.DB) {
 
 // SSHKeyAddForm add key form
 type SSHKeyAddForm struct {
-	Name      string `form:"name"`
-	PublicKey string `form:"public_key" binding:"Required"`
+	Name        string `form:"name"`
+	PublicKey   string `form:"public_key"`
+	Fingerprint string `form:"-"`
 }
 
-// PostSSHKeyAdd add a ssh key
-func PostSSHKeyAdd(ctx *web.Context, a Auth, f SSHKeyAddForm, ferrs binding.Errors, fl *session.Flash, db *models.DB) {
-	defer ctx.Redirect("/ssh-keys")
-	if ferrs.Len() > 0 {
-		fl.Error("公钥不能为空")
-		return
+// Validate validate the form
+func (f SSHKeyAddForm) Validate(db *models.DB) (SSHKeyAddForm, error) {
+	if len(f.PublicKey) == 0 {
+		return f, errors.New("公钥不能为空")
 	}
-	var p ssh.PublicKey
-	var err error
-	var c string
-	if p, c, _, _, err = ssh.ParseAuthorizedKey([]byte(f.PublicKey)); err != nil {
-		fl.Error("公钥格式错误")
-		return
+	p, c, _, _, err := ssh.ParseAuthorizedKey([]byte(f.PublicKey))
+	if err != nil {
+		return f, errors.New("公钥格式错误")
 	}
+	f.Fingerprint = strings.TrimSpace(ssh.FingerprintSHA256(p))
 	if len(f.Name) == 0 {
 		f.Name = strings.TrimSpace(c)
 	}
 	if len(f.Name) == 0 {
 		f.Name = "default"
 	}
-	fp := strings.TrimSpace(ssh.FingerprintSHA256(p))
 	var count uint
-	db.Model(&models.Key{}).Where("fingerprint = ?", fp).Count(&count)
+	db.Model(&models.Key{}).Where("fingerprint = ?", f.Fingerprint).Count(&count)
 	if count > 0 {
-		fl.Error("公钥已经被使用")
+		return f, errors.New("公钥已经被使用")
+	}
+	return f, nil
+}
+
+// PostSSHKeyAdd add a ssh key
+func PostSSHKeyAdd(ctx *web.Context, a Auth, f SSHKeyAddForm, fl *session.Flash, db *models.DB) {
+	defer ctx.Redirect("/ssh-keys")
+	// validate form
+	var err error
+	if f, err = f.Validate(db); err != nil {
+		fl.Error(err.Error())
 		return
 	}
-	k := models.Key{
+	// create
+	db.Create(&models.Key{
 		UserID:      a.User().ID,
 		Name:        f.Name,
-		Fingerprint: fp,
-	}
-	db.Create(&k)
+		Fingerprint: f.Fingerprint,
+	})
 }
 
 // SSHKeyDestroyForm destroy a ssh key
