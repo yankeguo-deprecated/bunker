@@ -15,9 +15,154 @@
 
 <body>
     {{ template "common/navbar" .}}
+
+    <!-- User Update Modal -->
+    <div class="modal fade" id="bunker-user-update-modal" tabindex="-1" role="dialog" aria-labelledby="bunker-user-update-modal-label">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <label class="modal-title" id="bunker-user-update-modal-label">
+                        <span class="modal-action-name"></span>
+                    </label>
+                </div>
+                <div class="modal-body">
+                    <form action="/users/update" method="post">
+                        {{.CSRF.CreateHTML}}
+                        <input id="user-id-input" type="hidden" name="id" value="" />
+                        <input id="user-update-input" type="hidden" name="" value="" />
+                        <div class="form-group">
+                            <label class="text-danger">确定要
+                                <span class="modal-action-name"></span>么？</label>
+                        </div>
+                        <div class="form-group text-right">
+                            <button class="btn btn-primary btn-sm" type="submit">确认</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="page-header">
+                    <h3>
+                        <i class="fa fa-users"></i>&nbsp;用户管理</h3>
+                    <hr/>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        添加用户
+                    </div>
+                    <div class="panel-body">
+                        <form action="/users/add" method="post">
+                            {{.CSRF.CreateHTML}}
+                            <div class="form-group">
+                                <label>用户名</label>
+                                <input type="text" class="form-control input-sm" name="account" placeholder="必须符合正则表达式 {{.NamePattern}}" />
+                            </div>
+                            <div class="form-group">
+                                <label>密码</label>
+                                <input type="text" class="form-control input-sm" name="password" placeholder="输入密码" />
+                            </div>
+                            <div class="form-group">
+                                <button class="btn btn-primary btn-block btn-sm" type="submit">
+                                    <i class="fa fa-plus-circle" aria-hidden="true"></i>&nbsp;添加用户</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="panel panel-default">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <td>ID</td>
+                                <td>用户名</td>
+                                <td>类型</td>
+                                <td>创建时间</td>
+                                <td>最近使用</td>
+                                <td>操作</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{range .Users}}
+                            <tr>
+                                <td>{{.ID}}</td>
+                                <td>{{.Account}}</td>
+                                <td>{{.Type}}</td>
+                                <td>{{.CreatedAt}}</td>
+                                <td>{{.UsedAt}}</td>
+                                <td>
+                                    {{if .IsCurrent}}
+                                    <span class="text-muted">当前用户</span>
+                                    {{else}} {{if .IsAdmin}}
+                                    <a href="#" class="action-link text-warning" data-toggle="modal" data-target="#bunker-user-update-modal" data-action="revoke-admin"
+                                        data-id="{{.ID}}">
+                                        <i class="fa fa-minus-square"></i>&nbsp;降权</a>
+                                    {{else}}
+                                    <a href="#" class="action-link text-primary" data-toggle="modal" data-target="#bunker-user-update-modal" data-action="assign-admin"
+                                        data-id="{{.ID}}">
+                                        <i class="fa fa-plus-square"></i>&nbsp;提权</a>
+                                    {{end}} &nbsp;|&nbsp; {{if .IsBlocked}}
+                                    <a href="#" class="action-link text-success" data-toggle="modal" data-target="#bunker-user-update-modal" data-action="unblock"
+                                        data-id="{{.ID}}">
+                                        <i class="fa fa-check-circle"></i>&nbsp;解封</a>
+                                    {{else}}
+                                    <a href="#" class="action-link text-danger" data-toggle="modal" data-target="#bunker-user-update-modal" data-action="block"
+                                        data-id="{{.ID}}">
+                                        <i class="fa fa-times-circle"></i>&nbsp;封禁</a>
+                                    {{end}} {{end}}
+                                </td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
     {{ template "common/foot" }}
+
+    <script>
+        $(window).ready(function () {
+            $("a.action-link").click(function (e) {
+                $("#user-id-input").attr("value", $(e.target).attr("data-id"))
+                var action = $(e.target).attr("data-action")
+                switch (action) {
+                    case "revoke-admin": {
+                        $("#user-update-input").attr("name", "is_admin").attr("value", "N")
+                        $("span.modal-action-name").text("取消管理员")
+                        break
+                    }
+                    case "assign-admin": {
+                        $("#user-update-input").attr("name", "is_admin").attr("value", "Y")
+                        $("span.modal-action-name").text("设为管理员")
+                        break
+                    }
+                    case "block": {
+                        $("#user-update-input").attr("name", "is_blocked").attr("value", "Y")
+                        $("span.modal-action-name").text("封禁用户")
+                        break
+                    }
+                    case "unblock": {
+                        $("#user-update-input").attr("name", "is_blocked").attr("value", "N")
+                        $("span.modal-action-name").text("解封用户")
+                        break
+                    }
+                }
+            })
+        })
+    </script>
 </body>
 
 </html>

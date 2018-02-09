@@ -135,3 +135,14 @@ func PostServerAdd(ctx *web.Context, f ServerAddForm, fl *session.Flash, db *mod
 		fl.Success(fmt.Sprintf("新建/更新 %s 成功", f.Name))
 	}
 }
+
+// ServerDestroyForm server destroy form
+type ServerDestroyForm struct {
+	ID string `form:"id"`
+}
+
+// PostServerDestroy post server destroy
+func PostServerDestroy(ctx *web.Context, f ServerDestroyForm, db *models.DB) {
+	defer ctx.Redirect("/servers")
+	db.Delete(&models.Server{}, f.ID)
+}
