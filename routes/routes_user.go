@@ -21,16 +21,24 @@ import (
 type UserItem struct {
 	ID        uint
 	Account   string
+	Tags      []UserItemTag
 	CreatedAt string
-	Type      string
+	UpdatedAt string
 	UsedAt    string
 	IsAdmin   bool
 	IsBlocked bool
 	IsCurrent bool
 }
 
+// UserItemTag user item tag
+type UserItemTag struct {
+	Style string
+	Name  string
+}
+
 // GetUsers show users
-func GetUsers(ctx *web.Context, db *models.DB, a Auth) {
+func GetUsers(ctx *web.Context, db *models.DB, a Auth, sess session.Store) {
+	ctx.Data["NewUserAccount"] = sess.Get("NewUserAccount")
 	ctx.Data["NamePattern"] = models.NamePattern.String()
 	ctx.Data["NavClass_Users"] = "active"
 
@@ -39,20 +47,32 @@ func GetUsers(ctx *web.Context, db *models.DB, a Auth) {
 	db.Order("is_blocked").Order("is_admin DESC").Find(&users)
 
 	for _, u := range users {
-		tags := []string{}
+		tags := []UserItemTag{}
 		if u.IsAdmin {
-			tags = append(tags, "管理员")
-		} else {
-			tags = append(tags, "普通用户")
+			tags = append(tags, UserItemTag{
+				Style: "success",
+				Name:  "管理员",
+			})
 		}
 		if u.IsBlocked {
-			tags = append(tags, "已封禁")
+			tags = append(tags, UserItemTag{
+				Style: "danger",
+				Name:  "已封禁",
+			})
 		}
+		if u.ID == a.User().ID {
+			tags = append(tags, UserItemTag{
+				Style: "primary",
+				Name:  "当前用户",
+			})
+		}
+
 		items = append(items, UserItem{
 			ID:        u.ID,
 			Account:   u.Account,
-			Type:      strings.Join(tags, ","),
+			Tags:      tags,
 			CreatedAt: TimeAgo(&u.CreatedAt),
+			UpdatedAt: TimeAgo(&u.UpdatedAt),
 			UsedAt:    TimeAgo(u.UsedAt),
 			IsAdmin:   u.IsAdmin,
 			IsBlocked: u.IsBlocked,
@@ -66,14 +86,18 @@ func GetUsers(ctx *web.Context, db *models.DB, a Auth) {
 
 // UserAddForm user add form
 type UserAddForm struct {
-	Account  string `form:"account"`
-	Password string `form:"password"`
+	Account     string `form:"account"`
+	Password    string `form:"password"`
+	RptPassword string `form:"rpt_password"`
 }
 
 // Validate validate the form
 func (f UserAddForm) Validate(db *models.DB) (UserAddForm, error) {
 	if !models.NamePattern.MatchString(f.Account) {
 		return f, errors.New("用户名不符合规则")
+	}
+	if f.Password != f.RptPassword {
+		return f, errors.New("重复密码不正确")
 	}
 	if len(f.Password) < 6 {
 		return f, errors.New("密码过短")
@@ -87,11 +111,12 @@ func (f UserAddForm) Validate(db *models.DB) (UserAddForm, error) {
 }
 
 // PostUserAdd post user add
-func PostUserAdd(ctx *web.Context, f UserAddForm, db *models.DB, fl *session.Flash) {
+func PostUserAdd(ctx *web.Context, f UserAddForm, db *models.DB, fl *session.Flash, sess session.Store) {
 	defer ctx.Redirect("/users")
 	var err error
 	if f, err = f.Validate(db); err != nil {
 		fl.Error(err.Error())
+		sess.Set("NewUserAccount", f.Account)
 		return
 	}
 	u := &models.User{
@@ -99,6 +124,7 @@ func PostUserAdd(ctx *web.Context, f UserAddForm, db *models.DB, fl *session.Fla
 	}
 	u.SetPassword(f.Password)
 	db.Create(u)
+	fl.Success("创建用户成功")
 }
 
 // UserUpdateForm user update form

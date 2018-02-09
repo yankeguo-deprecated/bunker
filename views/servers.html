@@ -78,30 +78,30 @@
                     <div class="col-md-12">
                         <div id="edit-form" class="panel panel-default">
                             <div class="panel-heading">
-                                添加服务器
+                                添加/更新服务器
                             </div>
                             <div class="panel-body">
                                 <form action="/servers/add" method="post">
                                     {{.CSRF.CreateHTML}}
                                     <div class="form-group">
                                         <label>名称</label>
-                                        <input type="text" class="form-control input-sm" name="name" placeholder="必须符合正则表达式 {{.NamePattern}}" value="{{.CurrentServerName}}"
+                                        <input type="text" class="form-control input-sm" name="name" placeholder="必须符合正则表达式 {{.NamePattern}}" value="{{.NewServerName}}"
                                         />
                                         <span class="help-block">名称唯一，使用相同的名称会更新现有记录</span>
                                     </div>
                                     <div class="form-group">
                                         <label>分组</label>
-                                        <input type="text" class="form-control input-sm" name="group_name" placeholder="必须符合正则表达式 {{.NamePattern}}" value="{{.CurrentGroupName}}"
+                                        <input type="text" class="form-control input-sm" name="group_name" placeholder="必须符合正则表达式 {{.NamePattern}}" value="{{.NewGroupName}}"
                                         />
                                     </div>
                                     <div class="form-group">
                                         <label>地址</label>
-                                        <input type="text" class="form-control input-sm" name="address" placeholder="10.10.10.10:22" value="{{.CurrentServerAddress}}"
+                                        <input type="text" class="form-control input-sm" name="address" placeholder="10.10.10.1:22" value="{{.NewServerAddress}}"
                                         />
                                     </div>
                                     <div class="form-group">
                                         <button class="btn btn-block btn-primary btn-sm" type="submit">
-                                            <i class="fa fa-plus-circle"></i>&nbsp;添加服务器</button> {{if .Flash.ErrorMsg}}
+                                            <i class="fa fa-plus-circle"></i>&nbsp;添加/更新服务器</button> {{if .Flash.ErrorMsg}}
                                         <span class="help-block text-danger">{{.Flash.ErrorMsg}}</span>
                                         {{end}} {{if .Flash.SuccessMsg}}
                                         <span class="help-block text-success">{{.Flash.SuccessMsg}}</span>
@@ -153,11 +153,13 @@
                                 <td>{{.UpdatedAt}}</td>
                                 <td>{{.UsedAt}}</td>
                                 <td>
-                                    <a class="edit-server text-success" href="#" data-name="{{.Name}}" data-group-name="{{.GroupName}}" data-address="{{.Address}}">编辑</a>
+                                    <a class="edit-server text-success" href="#" data-name="{{.Name}}" data-group-name="{{.GroupName}}" data-address="{{.Address}}">
+                                        <i class="fa fa-edit"></i>&nbsp;编辑</a>
                                     &nbsp;|&nbsp;
                                     <a data-toggle="modal" data-target="#bunker-server-destroy-modal" class="destroy-server text-danger" href="#" data-name="{{.Name}}"
                                         data-group-name="{{.GroupName}}" data-address="{{.Address}}" data-used-at="{{.UsedAt}}"
-                                        data-id="{{.ID}}">删除</a>
+                                        data-id="{{.ID}}">
+                                        <i class="fa fa-trash"></i>&nbsp;删除</a>
                                 </td>
                             </tr>
                             {{end}} {{else}}

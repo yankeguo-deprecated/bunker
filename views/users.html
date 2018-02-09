@@ -67,15 +67,29 @@
                             {{.CSRF.CreateHTML}}
                             <div class="form-group">
                                 <label>用户名</label>
-                                <input type="text" class="form-control input-sm" name="account" placeholder="必须符合正则表达式 {{.NamePattern}}" />
+                                <input type="text" class="form-control input-sm" name="account" placeholder="必须符合正则表达式 {{.NamePattern}}" value="{{.NewUserAccount}}"
+                                />
                             </div>
                             <div class="form-group">
                                 <label>密码</label>
-                                <input type="text" class="form-control input-sm" name="password" placeholder="输入密码" />
+                                <input type="password" class="form-control input-sm" name="password" placeholder="密码必须大于6位" />
+                            </div>
+                            <div class="form-group">
+                                <label>重复密码</label>
+                                <input type="password" class="form-control input-sm" name="rpt_password" placeholder="重复输入密码" />
                             </div>
                             <div class="form-group">
                                 <button class="btn btn-primary btn-block btn-sm" type="submit">
                                     <i class="fa fa-plus-circle" aria-hidden="true"></i>&nbsp;添加用户</button>
+                                {{if .Flash.ErrorMsg}}
+                                <span class="help-block text-danger">
+                                    {{.Flash.ErrorMsg}}
+                                </span>
+                                {{end}} {{if .Flash.SuccessMsg}}
+                                <span class="help-block text-success">
+                                    {{.Flash.SuccessMsg}}
+                                </span>
+                                {{end}}
                             </div>
                         </form>
                     </div>
@@ -90,6 +104,7 @@
                                 <td>用户名</td>
                                 <td>类型</td>
                                 <td>创建时间</td>
+                                <td>修改时间</td>
                                 <td>最近使用</td>
                                 <td>操作</td>
                             </tr>
@@ -99,12 +114,16 @@
                             <tr>
                                 <td>{{.ID}}</td>
                                 <td>{{.Account}}</td>
-                                <td>{{.Type}}</td>
+                                <td>
+                                    {{range .Tags}}
+                                    <span class="label label-{{.Style}}">{{.Name}}</span>&nbsp; {{end}}
+                                </td>
                                 <td>{{.CreatedAt}}</td>
+                                <td>{{.UpdatedAt}}</td>
                                 <td>{{.UsedAt}}</td>
                                 <td>
                                     {{if .IsCurrent}}
-                                    <span class="text-muted">当前用户</span>
+                                    <span class="text-muted">-</span>
                                     {{else}} {{if .IsAdmin}}
                                     <a href="#" class="action-link text-warning" data-toggle="modal" data-target="#bunker-user-update-modal" data-action="revoke-admin"
                                         data-id="{{.ID}}">

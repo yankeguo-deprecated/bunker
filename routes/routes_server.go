@@ -65,9 +65,9 @@ func GetServers(ctx *web.Context, cfg types.Config, db *models.DB, sess session.
 	ctx.Data["NamePattern"] = models.NamePattern.String()
 	ctx.Data["NavClass_Servers"] = "active"
 	ctx.Data["ClientPublicKey"] = GenerateClientAuthorizedKey(cfg)
-	ctx.Data["CurrentGroupName"] = sess.Get("CurrentGroupName")
-	ctx.Data["CurrentServerName"] = sess.Get("CurrentServerName")
-	ctx.Data["CurrentServerAddress"] = sess.Get("CurrentServerAddress")
+	ctx.Data["NewGroupName"] = sess.Get("NewGroupName")
+	ctx.Data["NewServerName"] = sess.Get("NewServerName")
+	ctx.Data["NewServerAddress"] = sess.Get("NewServerAddress")
 
 	ss := []models.Server{}
 	db.Find(&ss)
@@ -121,9 +121,9 @@ func PostServerAdd(ctx *web.Context, f ServerAddForm, fl *session.Flash, db *mod
 		fl.Error(err.Error())
 		return
 	}
-	sess.Set("CurrentGroupName", f.GroupName)
-	sess.Set("CurrentServerName", f.Name)
-	sess.Set("CurrentServerAddress", f.Address)
+	sess.Set("NewGroupName", f.GroupName)
+	sess.Set("NewServerName", f.Name)
+	sess.Set("NewServerAddress", f.Address)
 	s := models.Server{}
 	err = db.Assign(map[string]interface{}{
 		"group_name": f.GroupName,
@@ -132,7 +132,7 @@ func PostServerAdd(ctx *web.Context, f ServerAddForm, fl *session.Flash, db *mod
 		"name": f.Name,
 	}).Error
 	if err == nil {
-		fl.Success(fmt.Sprintf("新建/更新 %s 成功", f.Name))
+		fl.Success(fmt.Sprintf("新建/更新服务器 %s 成功", f.Name))
 	}
 }
 
