@@ -9,6 +9,7 @@
 package routes
 
 import (
+	"errors"
 	"net/http"
 
 	"ireul.com/bunker/models"
@@ -36,22 +37,30 @@ type ChangePasswordForm struct {
 	RptPassword string `form:"rpt_password"`
 }
 
+// Validate validate form
+func (f ChangePasswordForm) Validate(a Auth) (ChangePasswordForm, error) {
+	if f.NewPassword != f.RptPassword {
+		return f, errors.New("重复密码不正确")
+	}
+	if len(f.NewPassword) < 6 {
+		return f, errors.New("新密码长度不足")
+	}
+	if !a.User().CheckPassword(f.OldPassword) {
+		return f, errors.New("旧密码不正确")
+	}
+	return f, nil
+}
+
 // PostChangePassword get change password
 func PostChangePassword(ctx *web.Context, f ChangePasswordForm, a Auth, fl *session.Flash, db *models.DB) {
 	defer ctx.Redirect("/profile")
-	if f.NewPassword != f.RptPassword {
-		fl.Error("重复密码不正确")
-	}
-	if len(f.NewPassword) < 6 {
-		fl.Error("新密码长度不足")
+	var err error
+	if f, err = f.Validate(a); err != nil {
+		fl.Error(err.Error())
 		return
 	}
-	if !a.User().CheckPassword(f.OldPassword) {
-		fl.Error("旧密码不正确")
-		return
-	}
-	fl.Success("密码修改成功")
 	u := a.User()
 	u.SetPassword(f.NewPassword)
 	db.Model(u).Update("password_digest", u.PasswordDigest)
+	fl.Success("密码修改成功")
 }
