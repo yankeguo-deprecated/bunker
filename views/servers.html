@@ -195,6 +195,10 @@
                 url: function (q) { return "/api/hints/groups?q=" + q },
                 listLocation: "hints"
             })
+            $('input[name="name"]').easyAutocomplete({
+                url: function (q) { return "/api/hints/servers?q=" + q },
+                listLocation: "hints"
+            })
         })
     </script>
 </body>
