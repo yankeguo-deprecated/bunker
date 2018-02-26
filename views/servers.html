@@ -6,7 +6,7 @@
 -->
 
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 
 <head>
     {{ template "common/head" }}
@@ -190,6 +190,10 @@
                 $('#delete-group-name-label').text($(e.target).attr('data-group-name'))
                 $('#delete-address-label').text($(e.target).attr('data-address'))
                 $('#delete-used-at-label').text($(e.target).attr('data-used-at'))
+            })
+            $('input[name="group_name"]').easyAutocomplete({
+                url: function (q) { return "/api/hints/groups?q=" + q },
+                listLocation: "hints"
             })
         })
     </script>
