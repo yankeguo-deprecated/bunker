@@ -119,7 +119,7 @@
                             <div class="panel-body">
                                 <p>Bunker 使用一个主 SSH 密钥连接目标服务器</p>
                                 <p>请确保以下公钥存在于目标服务器的
-                                    <code>/root/.ssh/authorized_keys</code>文件中
+                                    <code>/root/.ssh/authorized_keys</code>中
                                 </p>
                                 <p>
                                     <pre><code>{{.ClientPublicKey}}</code></pre>
@@ -182,6 +182,9 @@
                 $('input[name="address"]').val($(e.target).attr("data-address"))
                 $('input').fadeOut('fast', function () {
                     $('input').fadeIn('fast')
+                })
+                $('button[type="submit"]').fadeOut('fast', function () {
+                    $('button[type="submit"]').fadeIn('fast')
                 })
             })
             $("a.destroy-server").click(function (e) {
