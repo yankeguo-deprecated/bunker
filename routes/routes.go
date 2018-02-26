@@ -34,9 +34,17 @@ func Mount(w *web.Web) {
 	w.Get("/users", MustSignedInAsAdmin(), GetUsers)
 	w.Post("/users/add", MustSignedInAsAdmin(), csrf.Validate, binding.Form(UserAddForm{}), PostUserAdd)
 	w.Post("/users/update", MustSignedInAsAdmin(), csrf.Validate, binding.Form(UserUpdateForm{}), PostUserUpdate)
+	w.Get("/grants", MustSignedInAsAdmin(), GetGrants)
+	w.Post("/grants/add", MustSignedInAsAdmin(), csrf.Validate, binding.Form(GrantAddForm{}), PostGrantAdd)
+	w.Post("/grants/destroy", MustSignedInAsAdmin(), csrf.Validate, binding.Form(GrantDestroyForm{}), PostGrantDestroy)
+	w.Get("/api/hints/users", MustSignedInAsAdmin(), GetUserHints)
+	w.Get("/api/hints/servers", MustSignedInAsAdmin(), GetServerHints)
+	w.Get("/api/hints/groups", MustSignedInAsAdmin(), GetGroupHints)
+	w.Get("/api/hints/target-users", MustSignedInAsAdmin(), GetTargetUserHints)
 }
 
 // GeneralFilter the general filter
 func GeneralFilter(ctx *web.Context, cfg types.Config) {
 	ctx.Data["Config"] = cfg
+	ctx.Next()
 }

@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"ireul.com/bunker/types"
@@ -21,6 +22,9 @@ import (
 
 // NamePattern general name pattern
 var NamePattern = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\._-]{3,}$`)
+
+// HintPattern general name hint pattern
+var HintPattern = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\._-]*$`)
 
 // Model basic model, not using orm.Model, no deletedAt
 type Model struct {
@@ -93,5 +97,65 @@ func (w *DB) CheckGrant(user User, srv Server, targetUser string) (err error) {
 // CountUserSSHKeys count user ssh keys
 func (w *DB) CountUserSSHKeys(u *User) (count uint) {
 	w.Model(&Key{}).Where("user_id = ?", u.ID).Count(&count)
+	return
+}
+
+// UserHints user account hints
+func (w *DB) UserHints(q string) (ns []string) {
+	ns = make([]string, 0)
+	if !HintPattern.MatchString(q) {
+		return
+	}
+	q = strings.ToLower(q) + "%"
+	us := make([]User, 0)
+	w.Select("DISTINCT account").Where("account LIKE ?", q).Find(&us)
+	for _, u := range us {
+		ns = append(ns, u.Account)
+	}
+	return
+}
+
+// ServerHints server name hints
+func (w *DB) ServerHints(q string) (ns []string) {
+	ns = make([]string, 0)
+	if !HintPattern.MatchString(q) {
+		return
+	}
+	q = strings.ToLower(q) + "%"
+	us := make([]Server, 0)
+	w.Select("DISTINCT name").Where("name LIKE ?", q).Find(&us)
+	for _, u := range us {
+		ns = append(ns, u.Name)
+	}
+	return
+}
+
+// GroupHints group name hints
+func (w *DB) GroupHints(q string) (ns []string) {
+	ns = make([]string, 0)
+	if !HintPattern.MatchString(q) {
+		return
+	}
+	q = strings.ToLower(q) + "%"
+	us := make([]Server, 0)
+	w.Select("DISTINCT group_name").Where("group_name LIKE ?", q).Find(&us)
+	for _, u := range us {
+		ns = append(ns, u.GroupName)
+	}
+	return
+}
+
+// TargetUserHints target user hints
+func (w *DB) TargetUserHints(q string) (ns []string) {
+	ns = make([]string, 0)
+	if !HintPattern.MatchString(q) {
+		return
+	}
+	q = strings.ToLower(q) + "%"
+	us := make([]Grant, 0)
+	w.Select("DISTINCT target_user").Where("target_user LIKE ?", q).Find(&us)
+	for _, u := range us {
+		ns = append(ns, u.TargetUser)
+	}
 	return
 }

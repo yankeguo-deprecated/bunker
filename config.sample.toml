@@ -1,6 +1,6 @@
 env = "development"
 secret = "abc123"
-domain = "example.com"
+domain = "localhost"
 title = "Bunker System"
 [db]
 url = "root@tcp(localhost:3306)/bunker_dev?parseTime=true&charset=utf8mb4,utf8"
@@ -12,6 +12,6 @@ port = 3000
 [sshd]
 host = "0.0.0.0"
 port = 2222
-private_key = "/tmp/host_rsa"
+private_key = "/etc/bunker/host_rsa"
 [ssh]
-private_key = "/tmp/client_rsa"
+private_key = "/etc/bunker/id_rsa"
