@@ -1,0 +1,19 @@
+<!--
+ Copyright (c) 2018 Yanke Guo <guoyk.cn@gmail.com>
+ 
+ This software is released under the MIT License.
+ https://opensource.org/licenses/MIT
+-->
+
+<!-- Error -->
+{{if .Flash.ErrorMsg}}
+<span class="help-block text-danger">
+    {{.Flash.ErrorMsg}}
+</span>
+{{end}}
+<!-- Success -->
+{{if .Flash.SuccessMsg}}
+<span class="help-block text-success">
+    {{.Flash.SuccessMsg}}
+</span>
+{{end}}

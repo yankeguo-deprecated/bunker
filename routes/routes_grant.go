@@ -15,7 +15,9 @@ import (
 )
 
 // GetGrants get all grants
-func GetGrants() {
+func GetGrants(ctx *web.Context) {
+	ctx.Data["NavClass_Grants"] = "active"
+	ctx.HTML(200, "grants")
 }
 
 // GrantAddForm grant add form

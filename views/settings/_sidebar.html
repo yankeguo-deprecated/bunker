@@ -1,0 +1,18 @@
+<!--
+ Copyright (c) 2018 Yanke Guo <guoyk.cn@gmail.com>
+ 
+ This software is released under the MIT License.
+ https://opensource.org/licenses/MIT
+-->
+
+<div class="panel panel-default">
+    <div class="panel-heading">个人设置</div>
+    <div class="list-group">
+        <a href="/settings/profile" class="list-group-item {{.SideClass_Profile}}">
+            <i class="fa fa-id-card"></i>&nbsp;基础信息</a>
+        <a href="/settings/change-password" class="list-group-item {{.SideClass_ChangePassword}}">
+            <i class="fa fa-lock"></i>&nbsp;修改密码</a>
+        <a href="/settings/ssh-keys" class="list-group-item {{.SideClass_SSHKeys}}">
+            <i class="fa fa-key"></i>&nbsp;SSH 公钥</a>
+    </div>
+</div>

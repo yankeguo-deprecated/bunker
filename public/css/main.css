@@ -10,17 +10,9 @@ body {
 }
 
 img.captcha-img {
-    height: 64px;
+    width: 100%;
 }
 
 div.bunker-toolbar {
     padding-bottom: 1rem;
-}
-
-div.page-header {
-    margin-bottom: 0;
-}
-
-div.page-header hr {
-    margin-bottom: 0px;
 }

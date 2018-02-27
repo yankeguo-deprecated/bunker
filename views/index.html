@@ -19,20 +19,19 @@
         {{if .MissingSSHKeys}}
         <div class="row">
             <div class="col-md-12">
-                <div class="alert alert-warning" role="alert">没有配置 SSH 公钥，请前往&nbsp;
-                    <code>当前用户</code>&nbsp;->&nbsp;
-                    <code>SSH 公钥</code>&nbsp;添加</div>
+                <div class="alert alert-warning" role="alert">没有配置 SSH 公钥，请
+                    <a href="/settings/ssh-keys/new" style="color: white;">前去添加 &gt;&gt;</a>
+                </div>
             </div>
-        </div>
-        {{end}} {{if .Auth.User.IsBlocked}}
-        <div class="row">
-            <div class="col-md-12">
-                <div class="alert alert-danger" role="alert">当前用户已经被禁用，将无法通过 SSH 访问目标服务器</div>
+            {{end}} {{if .Auth.User.IsBlocked}}
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="alert alert-danger" role="alert">当前用户已经被禁用，将无法通过 SSH 访问目标服务器</div>
+                </div>
             </div>
+            {{end}}
         </div>
-        {{end}}
-    </div>
-    {{ template "common/foot" }}
+        {{ template "common/foot" }}
 </body>
 
 </html>

@@ -17,9 +17,9 @@ import (
 	"ireul.com/web/session"
 )
 
-// GetProfile get change password
+// GetProfile get profile
 func GetProfile(ctx *web.Context, a Auth) {
-	ctx.Data["NavClass_Profile"] = "active"
+	ctx.Data["SideClass_Profile"] = "active"
 	ctx.Data["CreatedAt"] = TimeAgo(&a.User().CreatedAt)
 	ctx.Data["UsedAt"] = TimeAgo(a.User().UsedAt)
 	if a.User().IsAdmin {
@@ -27,7 +27,13 @@ func GetProfile(ctx *web.Context, a Auth) {
 	} else {
 		ctx.Data["UserType"] = "普通用户"
 	}
-	ctx.HTML(http.StatusOK, "profile")
+	ctx.HTML(http.StatusOK, "settings/profile")
+}
+
+// GetChangePassword get change password
+func GetChangePassword(ctx *web.Context, a Auth) {
+	ctx.Data["SideClass_ChangePassword"] = "active"
+	ctx.HTML(http.StatusOK, "settings/change-password")
 }
 
 // ChangePasswordForm change password form
@@ -53,7 +59,7 @@ func (f ChangePasswordForm) Validate(a Auth) (ChangePasswordForm, error) {
 
 // PostChangePassword get change password
 func PostChangePassword(ctx *web.Context, f ChangePasswordForm, a Auth, fl *session.Flash, db *models.DB) {
-	defer ctx.Redirect("/profile")
+	defer ctx.Redirect("/settings/change-password")
 	var err error
 	if f, err = f.Validate(a); err != nil {
 		fl.Error(err.Error())

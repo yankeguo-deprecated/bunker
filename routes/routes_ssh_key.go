@@ -31,7 +31,7 @@ type SSHKeyItem struct {
 
 // GetSSHKeys get keys
 func GetSSHKeys(ctx *web.Context, a Auth, db *models.DB) {
-	ctx.Data["NavClass_SSHKeys"] = "active"
+	ctx.Data["SideClass_SSHKeys"] = "active"
 	items := []SSHKeyItem{}
 	keys := []models.Key{}
 
@@ -49,7 +49,13 @@ func GetSSHKeys(ctx *web.Context, a Auth, db *models.DB) {
 
 	ctx.Data["SSHKeys"] = items
 
-	ctx.HTML(http.StatusOK, "ssh-keys")
+	ctx.HTML(http.StatusOK, "settings/ssh-keys")
+}
+
+// GetSSHKeysNew get ssh keys new
+func GetSSHKeysNew(ctx *web.Context, a Auth, db *models.DB) {
+	ctx.Data["SideClass_SSHKeys"] = "active"
+	ctx.HTML(http.StatusOK, "settings/ssh-keys/new")
 }
 
 // SSHKeyAddForm add key form
@@ -85,11 +91,11 @@ func (f SSHKeyAddForm) Validate(db *models.DB) (SSHKeyAddForm, error) {
 
 // PostSSHKeyAdd add a ssh key
 func PostSSHKeyAdd(ctx *web.Context, a Auth, f SSHKeyAddForm, fl *session.Flash, db *models.DB) {
-	defer ctx.Redirect("/ssh-keys")
 	// validate form
 	var err error
 	if f, err = f.Validate(db); err != nil {
 		fl.Error(err.Error())
+		ctx.Redirect("/settings/ssh-keys/new")
 		return
 	}
 	// create
@@ -98,6 +104,7 @@ func PostSSHKeyAdd(ctx *web.Context, a Auth, f SSHKeyAddForm, fl *session.Flash,
 		Name:        f.Name,
 		Fingerprint: f.Fingerprint,
 	})
+	ctx.Redirect("/settings/ssh-keys")
 }
 
 // SSHKeyDestroyForm destroy a ssh key
@@ -107,6 +114,6 @@ type SSHKeyDestroyForm struct {
 
 // PostSSHKeyDestroy destroy a ssh key
 func PostSSHKeyDestroy(ctx *web.Context, a Auth, f SSHKeyDestroyForm, ferrs binding.Errors, db *models.DB) {
-	defer ctx.Redirect("/ssh-keys")
+	defer ctx.Redirect("/settings/ssh-keys")
 	db.Delete(&models.Key{}, "user_id = ? AND id = ?", a.User().ID, f.KeyID)
 }

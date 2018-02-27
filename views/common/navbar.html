@@ -53,6 +53,10 @@
                     <a href="/users">
                         <i class="fa fa-users"></i>&nbsp;用户管理</a>
                 </li>
+                <li class="{{.NavClass_Grants}}">
+                    <a href="/grants">
+                        <i class="fa fa-handshake-o"></i>&nbsp;权限管理</a>
+                </li>
             </ul>
             {{end}}
             <ul class="nav navbar-nav navbar-right">
@@ -61,13 +65,9 @@
                         <span class="caret"></span>
                     </a>
                     <ul class="dropdown-menu">
-                        <li class="{{.NavClass_Profile}}">
-                            <a href="/profile">
-                                <i class="fa fa-user-circle" aria-hidden="true"></i>&nbsp;个人信息</a>
-                        </li>
-                        <li class="{{.NavClass_SSHKeys}}">
-                            <a href="/ssh-keys">
-                                <i class="fa fa-key" aria-hidden="true"></i>&nbsp;SSH 公钥</a>
+                        <li>
+                            <a href="/settings/profile">
+                                <i class="fa fa-gear" aria-hidden="true"></i>&nbsp;个人设置</a>
                         </li>
                         <li role="separator" class="divider"></li>
                         <li>

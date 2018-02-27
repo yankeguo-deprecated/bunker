@@ -17,7 +17,6 @@
     {{ template "common/navbar-empty" .}}
     <div class="container">
         <div class="row">
-            <div class="page-header"></div>
         </div>
         <div class="row">
             <div class="col-md-4 col-md-offset-4">
@@ -26,29 +25,37 @@
                         登录
                     </div>
                     <div class="panel-body">
-                        <form action="/login" method="post">
+                        <form class="form-horizontal" action="/login" method="post">
                             {{.CSRF.CreateHTML}}
-                            <div class="form-group">
-                                <label>用户名</label>
-                                <input type="text" class="form-control input-sm" name="account" />
+                            <div class="form-group form-group-sm">
+                                <label class="control-label col-sm-3">用户名</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" name="account" placeholder="输入用户名" />
+                                </div>
+                            </div>
+                            <div class="form-group form-group-sm">
+                                <label class="control-label col-sm-3">密码</label>
+                                <div class="col-sm-9">
+                                    <input type="password" class="form-control" name="password" placeholder="输入密码" />
+                                </div>
+                            </div>
+                            <div class="form-group form-group-sm">
+                                <label class="control-label col-sm-3">验证码</label>
+                                <div class="col-sm-4">
+                                    <input type="text" class="form-control input-sm" name="captcha" placeholder="输入验证码" />
+                                </div>
+                                <div class="col-sm-5 text-center">
+                                    {{.Captcha.CreateHTML}}
+                                </div>
                             </div>
                             <div class="form-group">
-                                <label>密码</label>
-                                <input type="password" class="form-control input-sm" name="password" />
-                            </div>
-                            <div class="form-group">
-                                <label>验证码</label>
-                                <input type="text" class="form-control input-sm" name="captcha" />
-                            </div>
-                            <div class="form-group text-center">
-                                {{.Captcha.CreateHTML}}
-                            </div>
-                            <div class="form-group">
-                                <input class="btn btn-block btn-primary btn-sm" type="submit" value="登录" /> {{if .Flash.ErrorMsg}}
-                                <span class="help-block text-danger">
-                                    {{.Flash.ErrorMsg}}
-                                </span>
-                                {{end}}
+                                <div class="col-sm-12">
+                                    <input class="btn btn-block btn-primary btn-sm" type="submit" value="登录" /> {{if .Flash.ErrorMsg}}
+                                    <span class="help-block text-danger">
+                                        {{.Flash.ErrorMsg}}
+                                    </span>
+                                    {{end}}
+                                </div>
                             </div>
                         </form>
                     </div>
