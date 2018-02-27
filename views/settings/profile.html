@@ -29,30 +29,34 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-md-12">
-                        <label>
-                            <i class="fa fa-id-card"></i>&nbsp;ID</label>
-                        <p>{{.Auth.User.ID}}</p>
-                    </div>
-                    <div class="col-md-12">
-                        <label>
-                            <i class="fa fa-user"></i>&nbsp;用户名</label>
-                        <p>{{.Auth.User.Account}}</p>
-                    </div>
-                    <div class="col-md-12">
-                        <label>
-                            <i class="fa fa-tags"></i>&nbsp;类型</label>
-                        <p>{{.UserType}}</p>
-                    </div>
-                    <div class="col-md-3">
-                        <label>
-                            <i class="fa fa-clock-o"></i>&nbsp;创建时间</label>
-                        <p>{{.CreatedAt}}</p>
-                    </div>
-                    <div class="col-md-3">
-                        <label>
-                            <i class="fa fa-clock-o"></i>&nbsp;最近使用</label>
-                        <p>{{.UsedAt}}</p>
+                    <div class="col-md-6">
+                        <ul class="list-group">
+                            <li class="list-group-item">
+                                <span>
+                                    <i class="fa fa-id-card"></i>&nbsp;ID</span>
+                                <span class="pull-right">{{.Auth.User.ID}}</span>
+                            </li>
+                            <li class="list-group-item">
+                                <span>
+                                    <i class="fa fa-user"></i>&nbsp;用户名</span>
+                                <span class="pull-right">{{.Auth.User.Account}}</span>
+                            </li>
+                            <li class="list-group-item">
+                                <span>
+                                    <i class="fa fa-tags"></i>&nbsp;类型</span>
+                                <span class="pull-right">{{.UserType}}</span>
+                            </li>
+                            <li class="list-group-item">
+                                <span>
+                                    <i class="fa fa-clock-o"></i>&nbsp;创建时间</span>
+                                <span class="pull-right">{{.CreatedAt}}</span>
+                            </li>
+                            <li class="list-group-item">
+                                <span>
+                                    <i class="fa fa-clock-o"></i>&nbsp;最近使用</span>
+                                <span class="pull-right">{{.UsedAt}}</span>
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
