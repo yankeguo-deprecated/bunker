@@ -1,0 +1,61 @@
+<!--
+ Copyright (c) 2018 Yanke Guo <guoyk.cn@gmail.com>
+ 
+ This software is released under the MIT License.
+ https://opensource.org/licenses/MIT
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    {{ template "common/head" }}
+    <title>Bunker - 编辑服务器</title>
+</head>
+
+<body>
+    {{ template "common/navbar" .}}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                {{template "servers/_sidebar" .}}
+            </div>
+            <div class="col-md-9">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4>
+                            <a href="/servers">所有服务器</a> / 编辑 {{.Server.Name}}</h4>
+                        <hr/>
+                    </div>
+                    <div class="col-md-6">
+                        <form action="/servers/{{.Server.ID}}/update" method="post">
+                            {{.CSRF.CreateHTML}}
+                            <div class="form-group form-group-sm">
+                                <label class="control-label">名称</label>
+                                <input disabled="disabled" type="text" class="form-control" name="name" value="{{.Server.Name}}" />
+                            </div>
+                            <div class="form-group form-group-sm">
+                                <label class="control-label">分组</label>
+                                <input type="text" class="form-control" name="group_name" placeholder="必须符合正则表达式 {{.NamePattern}}" value="{{.Server.Name}}"
+                                />
+                            </div>
+                            <div class="form-group form-group-sm">
+                                <label class="control-label">地址</label>
+                                <input type="text" class="form-control" name="address" placeholder="10.10.10.1:22" value="{{.Server.Address}}" /> {{template "common/flash-helpblock" .}}
+                            </div>
+                            <div class="form-group">
+                                <button class="btn btn-primary btn-sm" type="submit">更新服务器</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{ template "common/foot" }}
+    <script>
+        $('input[name="group_name"]').easyAutocomplete({
+            url: function (q) { return "/api/hints/groups?q=" + q },
+            listLocation: "hints"
+        })
+    </script>
+</body>

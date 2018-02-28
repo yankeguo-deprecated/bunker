@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"sort"
 	"strings"
 
@@ -60,14 +61,10 @@ func (a ServerItems) Len() int           { return len(a) }
 func (a ServerItems) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ServerItems) Less(i, j int) bool { return a[i].GroupName < a[j].GroupName }
 
-// GetServers list all servers
-func GetServers(ctx *web.Context, cfg types.Config, db *models.DB, sess session.Store) {
-	ctx.Data["NamePattern"] = models.NamePattern.String()
+// GetServersIndex list all servers
+func GetServersIndex(ctx *web.Context, cfg types.Config, db *models.DB, sess session.Store) {
 	ctx.Data["NavClass_Servers"] = "active"
-	ctx.Data["ClientPublicKey"] = GenerateClientAuthorizedKey(cfg)
-	ctx.Data["NewGroupName"] = sess.Get("NewGroupName")
-	ctx.Data["NewServerName"] = sess.Get("NewServerName")
-	ctx.Data["NewServerAddress"] = sess.Get("NewServerAddress")
+	ctx.Data["SideClass_Index"] = "active"
 
 	ss := []models.Server{}
 	db.Find(&ss)
@@ -89,7 +86,20 @@ func GetServers(ctx *web.Context, cfg types.Config, db *models.DB, sess session.
 	sort.Sort(ServerItems(items))
 	ctx.Data["Servers"] = items
 
-	ctx.HTML(200, "servers")
+	ctx.HTML(200, "servers/index")
+}
+
+// GetServersNew get servers new
+func GetServersNew(ctx *web.Context, sess session.Store) {
+	ctx.Data["NavClass_Servers"] = "active"
+	ctx.Data["SideClass_Index"] = "active"
+	ctx.Data["NamePattern"] = models.NamePattern.String()
+	ctx.Data["Server"] = map[string]string{
+		"Name":      ctx.Query("name"),
+		"GroupName": ctx.Query("group_name"),
+		"Address":   ctx.Query("address"),
+	}
+	ctx.HTML(200, "servers/new")
 }
 
 // ServerAddForm server add form
@@ -101,48 +111,80 @@ type ServerAddForm struct {
 
 // Validate validate
 func (f ServerAddForm) Validate() (ServerAddForm, error) {
+	f.Name = strings.TrimSpace(f.Name)
+	f.GroupName = strings.TrimSpace(f.GroupName)
+	f.Address = strings.TrimSpace(f.Address)
+
+	if len(f.Address) == 0 {
+		return f, errors.New("服务器地址不能为空")
+	}
+	if len(f.GroupName) == 0 {
+		f.GroupName = "default"
+	}
+
 	if !models.NamePattern.MatchString(f.Name) {
 		return f, errors.New("服务器名称不符合规则")
 	}
 	if !models.NamePattern.MatchString(f.GroupName) {
 		return f, errors.New("分组名称不符合规则")
 	}
-	if len(strings.Split(f.Address, ":")) != 2 {
+	if len(strings.Split(f.Address, ":")) < 2 {
 		f.Address = fmt.Sprintf("%s:22", f.Address)
 	}
 	return f, nil
 }
 
-// PostServerAdd post server add
-func PostServerAdd(ctx *web.Context, f ServerAddForm, fl *session.Flash, db *models.DB, sess session.Store) {
-	defer ctx.Redirect("/servers")
+// PostServerCreate post server add
+func PostServerCreate(ctx *web.Context, f ServerAddForm, fl *session.Flash, db *models.DB, sess session.Store) {
 	var err error
 	if f, err = f.Validate(); err != nil {
 		fl.Error(err.Error())
+		ctx.Redirect(AppendQuery(ctx.URLFor("new-server"), "name", f.Name, "group_name", f.GroupName, "address", f.Address))
 		return
 	}
-	sess.Set("NewGroupName", f.GroupName)
-	sess.Set("NewServerName", f.Name)
-	sess.Set("NewServerAddress", f.Address)
-	s := models.Server{}
-	err = db.Assign(map[string]interface{}{
-		"group_name": f.GroupName,
-		"address":    f.Address,
-	}).FirstOrCreate(&s, map[string]interface{}{
-		"name": f.Name,
-	}).Error
+	s := models.Server{
+		Name:      f.Name,
+		GroupName: f.GroupName,
+		Address:   f.Address,
+	}
+	err = db.Create(&s).Error
 	if err == nil {
-		fl.Success(fmt.Sprintf("新建/更新服务器 %s 成功", f.Name))
+		fl.Success(fmt.Sprintf("新建服务器 %s 成功", f.Name))
+		ctx.Redirect(ctx.URLFor("new-server"))
+	} else {
+		fl.Error(err.Error())
+		ctx.Redirect(ctx.URLFor("new-server"))
 	}
 }
 
-// ServerDestroyForm server destroy form
-type ServerDestroyForm struct {
-	ID string `form:"id"`
+// GetServerEdit get server edit
+func GetServerEdit(ctx *web.Context, db *models.DB) {
+	ctx.Data["NavClass_Servers"] = "active"
+	ctx.Data["SideClass_Index"] = "active"
+	s := models.Server{}
+	if db.First(&s, ctx.Params(":id")).Error != nil {
+		ctx.Redirect("/servers")
+		return
+	}
+	ctx.Data["Server"] = s
+	ctx.HTML(http.StatusOK, "servers/edit")
+}
+
+// PostServerUpdate post server update
+func PostServerUpdate(ctx *web.Context, f ServerAddForm, fl *session.Flash, db *models.DB, sess session.Store) {
+	ctx.Redirect("/servers")
 }
 
 // PostServerDestroy post server destroy
-func PostServerDestroy(ctx *web.Context, f ServerDestroyForm, db *models.DB) {
+func PostServerDestroy(ctx *web.Context, db *models.DB) {
 	defer ctx.Redirect("/servers")
-	db.Delete(&models.Server{}, f.ID)
+	db.Delete(&models.Server{}, ctx.Params(":id"))
+}
+
+// GetMasterKey get master key
+func GetMasterKey(ctx *web.Context, cfg types.Config) {
+	ctx.Data["NavClass_Servers"] = "active"
+	ctx.Data["SideClass_MasterKey"] = "active"
+	ctx.Data["MasterPublicKey"] = GenerateClientAuthorizedKey(cfg)
+	ctx.HTML(200, "servers/master-key")
 }

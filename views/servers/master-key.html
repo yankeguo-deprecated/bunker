@@ -1,0 +1,36 @@
+<!--
+ Copyright (c) 2018 Yanke Guo <guoyk.cn@gmail.com>
+ 
+ This software is released under the MIT License.
+ https://opensource.org/licenses/MIT
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    {{ template "common/head" }}
+    <title>Bunker - 主 SSH 公钥</title>
+</head>
+
+<body>
+    {{ template "common/navbar" .}}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                {{template "servers/_sidebar" .}}
+            </div>
+            <div class="col-md-9">
+                <h4>主 SSH 公钥</h4>
+                <hr/>
+                <p>Bunker 使用一个主 SSH 密钥连接目标服务器</p>
+                <p>请确保以下公钥存在于所有目标服务器的
+                    <code>/root/.ssh/authorized_keys</code>中
+                </p>
+                <p>
+                    <pre><code>{{.MasterPublicKey}}</code></pre>
+                </p>
+            </div>
+        </div>
+    </div>
+    {{ template "common/foot" }}
+</body>

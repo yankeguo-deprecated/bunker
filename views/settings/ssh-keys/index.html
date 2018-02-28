@@ -1,0 +1,117 @@
+<!--
+ Copyright (c) 2018 Yanke Guo <guoyk.cn@gmail.com>
+ 
+ This software is released under the MIT License.
+ https://opensource.org/licenses/MIT
+-->
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    {{ template "common/head" }}
+    <title>Bunker - SSH 公钥</title>
+</head>
+
+<body>
+    {{ template "common/navbar" .}}
+
+    <!-- SSHKey Destroy Modal -->
+    <div class="modal fade" id="bunker-ssh-key-destroy-modal" tabindex="-1" role="dialog" aria-labelledby="bunker-ssh-key-destroy-modal-label">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <label class="modal-title" id="bunker-ssh-key-destroy-modal-label">删除 SSH 公钥</label>
+                </div>
+                <div class="modal-body">
+                    <form id="ssh-key-destroy" action="/NOT_EXISTED" method="post">
+                        {{.CSRF.CreateHTML}}
+                        <div class="form-group">
+                            <label class="text-danger">确定要删除该 SSH 公钥么？</label>
+                        </div>
+                        <div class="form-group text-right">
+                            <button class="btn btn-danger btn-sm" type="submit">
+                                <i class="fa fa-delete" aria-hidden="true"></i>&nbsp;删除</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                {{template "settings/_sidebar" .}}
+            </div>
+            <div class="col-md-9">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4>SSH 公钥</h4>
+                        <hr/>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 bunker-toolbar">
+                        <a href="/settings/ssh-keys/new" class="btn btn-primary btn-sm">
+                            <i class="fa fa-plus-circle" aria-hidden="true"></i>&nbsp;添加公钥</a>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="panel panel-default">
+                            <table class="table table-hover">
+                                {{if .SSHKeys}}
+                                <thead>
+                                    <tr>
+                                        <td>ID</td>
+                                        <td>名称</td>
+                                        <td>指纹</td>
+                                        <td>添加时间</td>
+                                        <td>最近使用</td>
+                                        <td></td>
+                                    </tr>
+                                </thead>
+                                {{end}}
+                                <tbody>
+                                    {{if .SSHKeys}} {{range .SSHKeys}}
+                                    <tr>
+                                        <td>{{.ID}}</td>
+                                        <td>{{.Name}}</td>
+                                        <td>
+                                            <code>{{.Fingerprint}}</code>
+                                        </td>
+                                        <td>{{.CreatedAt}}</td>
+                                        <td>{{.UsedAt}}</td>
+                                        <td>
+                                            <a href="#" class="text-danger ssh-key-destroy-btn" data-id="{{.ID}}" data-toggle="modal" data-target="#bunker-ssh-key-destroy-modal">删除</a>
+                                        </td>
+                                    </tr>
+                                    {{end}} {{else}}
+                                    <tr>
+                                        <td colspan="5" class="text-center">
+                                            <span class="text-muted">没有配置 SSH 公钥</span>
+                                        </td>
+                                    </tr>
+                                    {{end}}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{ template "common/foot" }}
+
+    <script>
+        $(window).ready(function () {
+            $("a.ssh-key-destroy-btn").click(function (e) {
+                $("form#ssh-key-destroy").attr("action", "/settings/ssh-keys/" + $(e.target).attr("data-id") + "/destroy")
+            })
+        })
+    </script>
+</body>
+
+</html>
