@@ -30,7 +30,7 @@ func Mount(w *web.Web) {
 	w.Post("/settings/change-password", MustSignedIn(), csrf.Validate, binding.Form(ChangePasswordForm{}), PostSettingsChangePassword)
 	w.Get("/settings/ssh-keys", MustSignedIn(), GetSettingsSSHKeysIndex).Name("ssh-keys")
 	w.Get("/settings/ssh-keys/new", MustSignedIn(), GetSettingsSSHKeysNew).Name("new-ssh-key")
-	w.Post("/settings/ssh-keys", MustSignedIn(), csrf.Validate, binding.Form(SSHKeyAddForm{}), PostSettingsSSHKeysCreate)
+	w.Post("/settings/ssh-keys", MustSignedIn(), csrf.Validate, binding.Form(SSHKeyCreateForm{}), PostSettingsSSHKeysCreate)
 	w.Post("/settings/ssh-keys/:id/destroy", MustSignedIn(), csrf.Validate, PostSettingsSSHKeysDestroy).Name("destroy-ssh-key")
 	/* servers */
 	w.Get("/servers", MustSignedInAsAdmin(), GetServersIndex).Name("servers")
@@ -41,9 +41,11 @@ func Mount(w *web.Web) {
 	w.Post("/servers/:id/update", MustSignedInAsAdmin(), csrf.Validate, binding.Form(ServerCreateForm{}), PostServerUpdate).Name("update-server")
 	w.Post("/servers/:id/destroy", MustSignedInAsAdmin(), csrf.Validate, PostServerDestroy).Name("destroy-server")
 	/* users */
-	w.Get("/users", MustSignedInAsAdmin(), GetUsers)
-	w.Post("/users/add", MustSignedInAsAdmin(), csrf.Validate, binding.Form(UserAddForm{}), PostUserAdd)
-	w.Post("/users/update", MustSignedInAsAdmin(), csrf.Validate, binding.Form(UserUpdateForm{}), PostUserUpdate)
+	w.Get("/users", MustSignedInAsAdmin(), GetUsersIndex).Name("users")
+	w.Get("/users/new", MustSignedInAsAdmin(), GetUsersNew).Name("new-user")
+	w.Post("/users", MustSignedInAsAdmin(), csrf.Validate, binding.Form(UserAddForm{}), PostUsersCreate)
+	w.Post("/users/:id/update", MustSignedInAsAdmin(), csrf.Validate, binding.Form(UserUpdateForm{}), PostUserUpdate).Name("update-user")
+	/* grants */
 	w.Get("/grants", MustSignedInAsAdmin(), GetGrants)
 	w.Post("/grants/add", MustSignedInAsAdmin(), csrf.Validate, binding.Form(GrantAddForm{}), PostGrantAdd)
 	w.Post("/grants/destroy", MustSignedInAsAdmin(), csrf.Validate, binding.Form(GrantDestroyForm{}), PostGrantDestroy)

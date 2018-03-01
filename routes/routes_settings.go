@@ -110,15 +110,15 @@ func GetSettingsSSHKeysNew(ctx *web.Context, a Auth, db *models.DB) {
 	ctx.HTML(http.StatusOK, "settings/ssh-keys/new")
 }
 
-// SSHKeyAddForm add key form
-type SSHKeyAddForm struct {
+// SSHKeyCreateForm add key form
+type SSHKeyCreateForm struct {
 	Name        string `form:"name"`
 	PublicKey   string `form:"public_key"`
 	Fingerprint string `form:"-"`
 }
 
 // Validate validate the form
-func (f SSHKeyAddForm) Validate(db *models.DB) (SSHKeyAddForm, error) {
+func (f SSHKeyCreateForm) Validate(db *models.DB) (SSHKeyCreateForm, error) {
 	if len(f.PublicKey) == 0 {
 		return f, errors.New("公钥不能为空")
 	}
@@ -142,7 +142,7 @@ func (f SSHKeyAddForm) Validate(db *models.DB) (SSHKeyAddForm, error) {
 }
 
 // PostSettingsSSHKeysCreate add a ssh key
-func PostSettingsSSHKeysCreate(ctx *web.Context, a Auth, f SSHKeyAddForm, fl *session.Flash, db *models.DB) {
+func PostSettingsSSHKeysCreate(ctx *web.Context, a Auth, f SSHKeyCreateForm, fl *session.Flash, db *models.DB) {
 	// validate form
 	var err error
 	if f, err = f.Validate(db); err != nil {

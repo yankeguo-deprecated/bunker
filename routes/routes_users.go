@@ -10,6 +10,7 @@ package routes
 
 import (
 	"errors"
+	"net/http"
 	"strings"
 
 	"ireul.com/bunker/models"
@@ -36,11 +37,10 @@ type UserItemTag struct {
 	Name  string
 }
 
-// GetUsers show users
-func GetUsers(ctx *web.Context, db *models.DB, a Auth, sess session.Store) {
-	ctx.Data["NewUserAccount"] = sess.Get("NewUserAccount")
-	ctx.Data["NamePattern"] = models.NamePattern.String()
+// GetUsersIndex show users
+func GetUsersIndex(ctx *web.Context, db *models.DB, a Auth, sess session.Store) {
 	ctx.Data["NavClass_Users"] = "active"
+	ctx.Data["SideClass_Index"] = "active"
 
 	items := []UserItem{}
 	users := []models.User{}
@@ -81,7 +81,12 @@ func GetUsers(ctx *web.Context, db *models.DB, a Auth, sess session.Store) {
 	}
 	ctx.Data["Users"] = items
 
-	ctx.HTML(200, "users")
+	ctx.HTML(200, "users/index")
+}
+
+// GetUsersNew get users new
+func GetUsersNew(ctx *web.Context) {
+	ctx.HTML(http.StatusOK, "users/new")
 }
 
 // UserAddForm user add form
@@ -110,13 +115,12 @@ func (f UserAddForm) Validate(db *models.DB) (UserAddForm, error) {
 	return f, nil
 }
 
-// PostUserAdd post user add
-func PostUserAdd(ctx *web.Context, f UserAddForm, db *models.DB, fl *session.Flash, sess session.Store) {
-	defer ctx.Redirect("/users")
+// PostUsersCreate post user add
+func PostUsersCreate(ctx *web.Context, f UserAddForm, db *models.DB, fl *session.Flash, sess session.Store) {
 	var err error
 	if f, err = f.Validate(db); err != nil {
 		fl.Error(err.Error())
-		sess.Set("NewUserAccount", f.Account)
+		ctx.Redirect(AppendQuery(ctx.URLFor("new-user"), "account", f.Account))
 		return
 	}
 	u := &models.User{
@@ -125,18 +129,18 @@ func PostUserAdd(ctx *web.Context, f UserAddForm, db *models.DB, fl *session.Fla
 	u.SetPassword(f.Password)
 	db.Create(u)
 	fl.Success("创建用户成功")
+	ctx.Redirect(ctx.URLFor("users"))
 }
 
 // UserUpdateForm user update form
 type UserUpdateForm struct {
-	ID        string `form:"id"`
 	IsAdmin   string `form:"is_admin"`
 	IsBlocked string `form:"is_blocked"`
 }
 
 // PostUserUpdate post user update
 func PostUserUpdate(ctx *web.Context, f UserUpdateForm, db *models.DB) {
-	defer ctx.Redirect("/users")
+	defer ctx.Redirect(ctx.URLFor("users"))
 
 	attrs := map[string]interface{}{}
 
@@ -148,6 +152,6 @@ func PostUserUpdate(ctx *web.Context, f UserUpdateForm, db *models.DB) {
 	}
 
 	u := models.User{}
-	db.Find(&u, f.ID)
+	db.Find(&u, ctx.Params(":id"))
 	db.Model(&u).Update(attrs)
 }

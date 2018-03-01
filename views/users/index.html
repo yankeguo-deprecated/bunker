@@ -1,0 +1,163 @@
+<!--
+ Copyright (c) 2018 Yanke Guo <guoyk.cn@gmail.com>
+ 
+ This software is released under the MIT License.
+ https://opensource.org/licenses/MIT
+-->
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    {{ template "common/head" }}
+    <title>Bunker - 用户列表</title>
+</head>
+
+<body>
+    {{ template "common/navbar" .}}
+
+    <!-- User Update Modal -->
+    <div class="modal fade" id="bunker-user-update-modal" tabindex="-1" role="dialog" aria-labelledby="bunker-user-update-modal-label">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <label class="modal-title" id="bunker-user-update-modal-label">
+                        <span class="span-action-name"></span>
+                    </label>
+                </div>
+                <div class="modal-body">
+                    <form id="user-update" action="/NOT_EXISTED" method="post">
+                        {{.CSRF.CreateHTML}}
+                        <input id="user-update-input" type="hidden" name="" value="" />
+                        <div>
+                            <label class="text-danger">确定要
+                                <span class="span-action-name"></span>么</label>
+                        </div>
+                        <div class="text-right">
+                            <button class="btn btn-primary btn-sm" type="submit">确认</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                {{template "users/_sidebar" .}}
+            </div>
+            <div class="col-md-9">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4>所有用户</h4>
+                        <hr/>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        {{template "common/flash-alert" .}}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 bunker-toolbar">
+                        <a href="/users/new" class="btn btn-primary btn-sm">
+                            <i class="fa fa-plus-circle" aria-hidden="true"></i>&nbsp;添加用户</a>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="panel panel-default">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <td>ID</td>
+                                        <td>用户名</td>
+                                        <td>类型</td>
+                                        <td>创建时间</td>
+                                        <td>修改时间</td>
+                                        <td>最近使用</td>
+                                        <td>操作</td>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {{range .Users}}
+                                    <tr>
+                                        <td>{{.ID}}</td>
+                                        <td>{{.Account}}</td>
+                                        <td>
+                                            {{range .Tags}}
+                                            <span class="label label-{{.Style}}">{{.Name}}</span>&nbsp; {{end}}
+                                        </td>
+                                        <td>{{.CreatedAt}}</td>
+                                        <td>{{.UpdatedAt}}</td>
+                                        <td>{{.UsedAt}}</td>
+                                        <td>
+                                            {{if .IsCurrent}}
+                                            <span class="text-muted">-</span>
+                                            {{else}} {{if .IsAdmin}}
+                                            <a href="#" class="action-link text-warning" data-toggle="modal" data-target="#bunker-user-update-modal" data-action="revoke-admin"
+                                                data-id="{{.ID}}">
+                                                <i class="fa fa-minus-square"></i>&nbsp;降权</a>
+                                            {{else}}
+                                            <a href="#" class="action-link text-primary" data-toggle="modal" data-target="#bunker-user-update-modal" data-action="assign-admin"
+                                                data-id="{{.ID}}">
+                                                <i class="fa fa-plus-square"></i>&nbsp;提权</a>
+                                            {{end}} &nbsp;|&nbsp; {{if .IsBlocked}}
+                                            <a href="#" class="action-link text-success" data-toggle="modal" data-target="#bunker-user-update-modal" data-action="unblock"
+                                                data-id="{{.ID}}">
+                                                <i class="fa fa-check-circle"></i>&nbsp;解封</a>
+                                            {{else}}
+                                            <a href="#" class="action-link text-danger" data-toggle="modal" data-target="#bunker-user-update-modal" data-action="block"
+                                                data-id="{{.ID}}">
+                                                <i class="fa fa-times-circle"></i>&nbsp;封禁</a>
+                                            {{end}} {{end}}
+                                        </td>
+                                    </tr>
+                                    {{end}}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{ template "common/foot" }}
+
+    <script>
+        $(window).ready(function () {
+            $("a.action-link").click(function (e) {
+                $("form#user-update").attr("action", "/users/" + $(e.target).attr("data-id") + "/update")
+                var action = $(e.target).attr("data-action")
+                switch (action) {
+                    case "revoke-admin": {
+                        $("#user-update-input").attr("name", "is_admin").attr("value", "N")
+                        $("span.span-action-name").text("取消管理员")
+                        break
+                    }
+                    case "assign-admin": {
+                        $("#user-update-input").attr("name", "is_admin").attr("value", "Y")
+                        $("span.span-action-name").text("设为管理员")
+                        break
+                    }
+                    case "block": {
+                        $("#user-update-input").attr("name", "is_blocked").attr("value", "Y")
+                        $("span.span-action-name").text("封禁用户")
+                        break
+                    }
+                    case "unblock": {
+                        $("#user-update-input").attr("name", "is_blocked").attr("value", "N")
+                        $("span.span-action-name").text("解封用户")
+                        break
+                    }
+                }
+            })
+        })
+    </script>
+</body>
+
+</html>

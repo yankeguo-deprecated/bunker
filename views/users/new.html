@@ -9,7 +9,7 @@
 
 <head>
     {{ template "common/head" }}
-    <title>Bunker - 编辑服务器</title>
+    <title>Bunker - 用户列表</title>
 </head>
 
 <body>
@@ -17,52 +17,53 @@
     <div class="container">
         <div class="row">
             <div class="col-md-3">
-                {{template "servers/_sidebar" .}}
+                {{template "users/_sidebar" .}}
             </div>
             <div class="col-md-9">
                 <div class="row">
                     <div class="col-md-12">
                         <h4>
-                            <a href="/servers">所有服务器</a> / 编辑 {{.Server.Name}}</h4>
+                            <a href="/users">所有用户</a> / 添加</h4>
                         <hr/>
                     </div>
+                </div>
+                <div class="row">
                     <div class="col-md-12">
                         {{template "common/flash-alert" .}}
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-12">
-                        <form action="/servers/{{.Server.ID}}/update" method="post">
+                        <form action="/users" method="post">
                             {{.CSRF.CreateHTML}}
-                            <input type="hidden" name="name" value="{{.Server.Name}}" />
-                            <div class="form-group form-group-sm">
-                                <label class="control-label">名称</label>
+                            <div class="form-group">
+                                <label>用户名</label>
                                 <div class="row">
                                     <div class="col-md-4">
-                                        <input disabled="disabled" type="text" class="form-control" value="{{.Server.Name}}" />
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="form-group form-group-sm">
-                                <label class="control-label">分组</label>
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <input type="text" class="form-control" name="group_name" placeholder="default" value="{{.Server.Name}}" />
+                                        <input type="text" class="form-control input-sm" name="account" placeholder="输入用户名" value="{{.NewUserAccount}}" />
                                     </div>
                                 </div>
                                 {{template "common/pattern-helpblock"}}
                             </div>
-                            <div class="form-group form-group-sm">
-                                <label class="control-label">地址</label>
+                            <div class="form-group">
+                                <label>密码</label>
                                 <div class="row">
                                     <div class="col-md-4">
-                                        <input type="text" class="form-control" name="address" placeholder="10.10.10.1:22" value="{{.Server.Address}}" />
+                                        <input type="password" class="form-control input-sm" name="password" placeholder="输入密码" />
                                     </div>
                                 </div>
-                                <span class="help-block">建议使用目标服务器的内网 IP</span>
+                                <span class="help-block">长度必须大于6</span>
                             </div>
                             <div class="form-group">
-                                <button class="btn btn-primary btn-sm" type="submit">更新服务器</button>
+                                <label>重复密码</label>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <input type="password" class="form-control input-sm" name="rpt_password" placeholder="重复输入密码" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <button class="btn btn-primary btn-sm" type="submit">添加用户</button>
                             </div>
                         </form>
                     </div>
@@ -71,10 +72,4 @@
         </div>
     </div>
     {{ template "common/foot" }}
-    <script>
-        $('input[name="group_name"]').easyAutocomplete({
-            url: function (q) { return "/api/hints/groups?q=" + q },
-            listLocation: "hints"
-        })
-    </script>
 </body>

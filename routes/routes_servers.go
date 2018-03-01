@@ -92,7 +92,6 @@ func GetServersIndex(ctx *web.Context, cfg types.Config, db *models.DB, sess ses
 // GetServersNew get servers new
 func GetServersNew(ctx *web.Context, sess session.Store) {
 	ctx.Data["NavClass_Servers"] = "active"
-	ctx.Data["NamePattern"] = models.NamePattern.String()
 	ctx.Data["Server"] = map[string]string{
 		"Name":      ctx.Query("name"),
 		"GroupName": ctx.Query("group_name"),
