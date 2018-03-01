@@ -46,9 +46,10 @@ func Mount(w *web.Web) {
 	w.Post("/users", MustSignedInAsAdmin(), csrf.Validate, binding.Form(UserAddForm{}), PostUsersCreate)
 	w.Post("/users/:id/update", MustSignedInAsAdmin(), csrf.Validate, binding.Form(UserUpdateForm{}), PostUserUpdate).Name("update-user")
 	/* grants */
-	w.Get("/grants", MustSignedInAsAdmin(), GetGrants)
-	w.Post("/grants/add", MustSignedInAsAdmin(), csrf.Validate, binding.Form(GrantAddForm{}), PostGrantAdd)
-	w.Post("/grants/destroy", MustSignedInAsAdmin(), csrf.Validate, binding.Form(GrantDestroyForm{}), PostGrantDestroy)
+	w.Get("/users/:userid/grants", MustSignedInAsAdmin(), GetGrantsIndex).Name("user-grants")
+	w.Post("/users/:userid/grants", MustSignedInAsAdmin(), csrf.Validate, binding.Form(GrantCreateForm{}), PostGrantsCreate)
+	w.Post("/users/:userid/grants/:id/destroy", MustSignedInAsAdmin(), csrf.Validate, PostGrantDestroy).Name("user-destroy-grant")
+	/* hints */
 	w.Get("/api/hints/users", MustSignedInAsAdmin(), GetUserHints)
 	w.Get("/api/hints/servers", MustSignedInAsAdmin(), GetServerHints)
 	w.Get("/api/hints/groups", MustSignedInAsAdmin(), GetGroupHints)

@@ -1,0 +1,153 @@
+<!--
+ Copyright (c) 2018 Yanke Guo <guoyk.cn@gmail.com>
+ 
+ This software is released under the MIT License.
+ https://opensource.org/licenses/MIT
+-->
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    {{ template "common/head" }}
+    <title>Bunker - 授权管理</title>
+</head>
+
+<body>
+    {{ template "common/navbar" .}}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                {{template "users/_sidebar"}}
+            </div>
+            <div class="col-md-9">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4>
+                            <a href="/users">所有用户</a> / 管理授权 - {{.User.Account}}
+                        </h4>
+                        <hr/>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        {{template "common/flash-alert" .}}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="panel panel-default">
+                            <div class="panel-body">
+                                <form class="form-inline" action="/users/{{.User.ID}}/grants" method="POST">
+                                    {{.CSRF.CreateHTML}}
+                                    <div class="form-group form-group-sm">
+                                        <input type="text" class="form-control" placeholder="输入 Linux 账户" name="target_user" />
+                                    </div>
+                                    &nbsp;
+                                    <i class="fa fa-at"></i>&nbsp;
+                                    <div class="form-group form-group-sm">
+                                        <select style="width: 8rem;" class="form-control" name="target_type">
+                                            <option value="1">单服务器</option>
+                                            <option value="2">服务器组</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group form-group-sm">
+                                        <input type="text" class="form-control" placeholder="输入服务器名" name="target_name" />
+                                    </div>
+                                    &nbsp;
+                                    <i class="fa fa-clock-o"></i>&nbsp;
+                                    <div class="form-group form-group-sm">
+                                        <input style="width: 8rem;" type="number" class="form-control time-input-short" name="expires_in" value="1" />
+                                    </div>
+                                    <div class="form-group form-group-sm">
+                                        <select style="width: 6rem;" class="form-control" name="expires_unit">
+                                            <option value="h">小时</option>
+                                            <option value="d">天</option>
+                                            <option value="e">永久</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-sm pull-right">添加 / 更新</button>
+                                </form>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="panel panel-default">
+                            <table class="table table-hover">
+                                {{if .Grants}}
+                                <thead>
+                                    <tr>
+                                        <td>ID</td>
+                                        <td>Linux 账户</td>
+                                        <td>目标</td>
+                                        <td>过期时间</td>
+                                        <td></td>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {{range .Grants}}
+                                    <tr>
+                                        <td>{{.ID}}</td>
+                                        <td>{{.TargetUser}}</td>
+                                        <td>
+                                            {{if .IsGroup}}
+                                            <small class="text-muted">服务器组:</small>
+                                            {{else}}
+                                            <small class="text-muted">单服务器:</small>
+                                            {{end}} {{.TargetName}}
+                                        </td>
+                                        <td {{if .IsExpired}}class="text-danger" {{else}}class="text-success" {{end}}>{{.ExpiresAt}}</td>
+                                    </tr>
+                                    {{end}}
+                                </tbody>
+                                {{else}}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">没有配置授权</td>
+                                </tr>
+                                {{end}}
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{ template "common/foot" }}
+    <script>
+        $(window).ready(function () {
+            $('select[name="expires_unit"]').change(function (e) {
+                if (e.target.value === 'e') {
+                    $('input[name="expires_in"]').hide()
+                } else {
+                    $('input[name="expires_in"]').show()
+                }
+            })
+            $('select[name="target_type"]').change(function (e) {
+                if (e.target.value === '1') {
+                    $('input[name="target_name"]').attr("placeholder", "输入服务器名")
+                } else {
+                    $('input[name="target_name"]').attr("placeholder", "输入服务器组名")
+                }
+            })
+            $('input[name="target_user"]').easyAutocomplete({
+                url: function (q) { return "/api/hints/target-users?q=" + q },
+                listLocation: "hints"
+            })
+            $('input[name="target_name"]').easyAutocomplete({
+                url: function (q) {
+                    if ($('select[name="target_type"]')[0].value === '1') {
+                        return "/api/hints/servers?q=" + q
+                    } else {
+                        return "/api/hints/groups?q=" + q
+                    }
+                },
+                listLocation: "hints"
+            })
+        })
+    </script>
+</body>
+
+</html>
