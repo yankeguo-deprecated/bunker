@@ -86,6 +86,9 @@ func GetUsersIndex(ctx *web.Context, db *models.DB, a Auth, sess session.Store) 
 
 // GetUsersNew get users new
 func GetUsersNew(ctx *web.Context) {
+	ctx.Data["User"] = map[string]interface{}{
+		"Account": ctx.Query("account"),
+	}
 	ctx.HTML(http.StatusOK, "users/new")
 }
 
