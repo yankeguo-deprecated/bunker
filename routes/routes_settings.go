@@ -107,7 +107,6 @@ func GetSettingsSSHKeysIndex(ctx *web.Context, a Auth, db *models.DB) {
 
 // GetSettingsSSHKeysNew get ssh keys new
 func GetSettingsSSHKeysNew(ctx *web.Context, a Auth, db *models.DB) {
-	ctx.Data["SideClass_SSHKeys"] = "active"
 	ctx.HTML(http.StatusOK, "settings/ssh-keys/new")
 }
 

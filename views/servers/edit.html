@@ -26,12 +26,16 @@
                             <a href="/servers">所有服务器</a> / 编辑 {{.Server.Name}}</h4>
                         <hr/>
                     </div>
+                    <div class="col-md-12">
+                        {{template "common/flash-alert" .}}
+                    </div>
                     <div class="col-md-6">
                         <form action="/servers/{{.Server.ID}}/update" method="post">
                             {{.CSRF.CreateHTML}}
+                            <input type="hidden" name="name" value="{{.Server.Name}}" />
                             <div class="form-group form-group-sm">
                                 <label class="control-label">名称</label>
-                                <input disabled="disabled" type="text" class="form-control" name="name" value="{{.Server.Name}}" />
+                                <input disabled="disabled" type="text" class="form-control" value="{{.Server.Name}}" />
                             </div>
                             <div class="form-group form-group-sm">
                                 <label class="control-label">分组</label>
@@ -40,7 +44,7 @@
                             </div>
                             <div class="form-group form-group-sm">
                                 <label class="control-label">地址</label>
-                                <input type="text" class="form-control" name="address" placeholder="10.10.10.1:22" value="{{.Server.Address}}" /> {{template "common/flash-helpblock" .}}
+                                <input type="text" class="form-control" name="address" placeholder="10.10.10.1:22" value="{{.Server.Address}}" />
                             </div>
                             <div class="form-group">
                                 <button class="btn btn-primary btn-sm" type="submit">更新服务器</button>

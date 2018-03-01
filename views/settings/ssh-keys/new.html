@@ -28,6 +28,9 @@
                             <a href="/settings/ssh-keys">SSH 公钥</a> / 添加</h4>
                         <hr/>
                     </div>
+                    <div class="col-md-12">
+                        {{template "common/flash-alert" .}}
+                    </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
@@ -39,7 +42,7 @@
                             </div>
                             <div class="form-group form-group-sm">
                                 <label class="control-label">公钥</label>
-                                <textarea rows="6" class="form-control" name="public_key" placeholder="ssh-rsa AAAAB3NzaC1yc2EAAAADAQ......"></textarea> {{template "common/flash-helpblock" .}}
+                                <textarea rows="6" class="form-control" name="public_key" placeholder="ssh-rsa AAAAB3NzaC1yc2EAAAADAQ......"></textarea>
                             </div>
                             <div class="form-group form-group-sm">
                                 <button class="btn btn-primary btn-sm" type="submit">

@@ -92,7 +92,6 @@ func GetServersIndex(ctx *web.Context, cfg types.Config, db *models.DB, sess ses
 // GetServersNew get servers new
 func GetServersNew(ctx *web.Context, sess session.Store) {
 	ctx.Data["NavClass_Servers"] = "active"
-	ctx.Data["SideClass_Index"] = "active"
 	ctx.Data["NamePattern"] = models.NamePattern.String()
 	ctx.Data["Server"] = map[string]string{
 		"Name":      ctx.Query("name"),
@@ -102,15 +101,15 @@ func GetServersNew(ctx *web.Context, sess session.Store) {
 	ctx.HTML(200, "servers/new")
 }
 
-// ServerAddForm server add form
-type ServerAddForm struct {
+// ServerCreateForm server add form
+type ServerCreateForm struct {
 	Name      string `form:"name"`
 	GroupName string `form:"group_name"`
 	Address   string `form:"address"`
 }
 
 // Validate validate
-func (f ServerAddForm) Validate() (ServerAddForm, error) {
+func (f ServerCreateForm) Validate() (ServerCreateForm, error) {
 	f.Name = strings.TrimSpace(f.Name)
 	f.GroupName = strings.TrimSpace(f.GroupName)
 	f.Address = strings.TrimSpace(f.Address)
@@ -135,7 +134,7 @@ func (f ServerAddForm) Validate() (ServerAddForm, error) {
 }
 
 // PostServerCreate post server add
-func PostServerCreate(ctx *web.Context, f ServerAddForm, fl *session.Flash, db *models.DB, sess session.Store) {
+func PostServerCreate(ctx *web.Context, f ServerCreateForm, fl *session.Flash, db *models.DB, sess session.Store) {
 	var err error
 	if f, err = f.Validate(); err != nil {
 		fl.Error(err.Error())
@@ -149,7 +148,7 @@ func PostServerCreate(ctx *web.Context, f ServerAddForm, fl *session.Flash, db *
 	}
 	err = db.Create(&s).Error
 	if err == nil {
-		fl.Success(fmt.Sprintf("新建服务器 %s 成功", f.Name))
+		fl.Success(fmt.Sprintf("添加服务器 %s 成功", f.Name))
 		ctx.Redirect(ctx.URLFor("new-server"))
 	} else {
 		fl.Error(err.Error())
@@ -158,11 +157,11 @@ func PostServerCreate(ctx *web.Context, f ServerAddForm, fl *session.Flash, db *
 }
 
 // GetServerEdit get server edit
-func GetServerEdit(ctx *web.Context, db *models.DB) {
+func GetServerEdit(ctx *web.Context, db *models.DB, fl *session.Flash) {
 	ctx.Data["NavClass_Servers"] = "active"
-	ctx.Data["SideClass_Index"] = "active"
 	s := models.Server{}
 	if db.First(&s, ctx.Params(":id")).Error != nil {
+		fl.Error("没有找到目标服务器")
 		ctx.Redirect("/servers")
 		return
 	}
@@ -171,7 +170,30 @@ func GetServerEdit(ctx *web.Context, db *models.DB) {
 }
 
 // PostServerUpdate post server update
-func PostServerUpdate(ctx *web.Context, f ServerAddForm, fl *session.Flash, db *models.DB, sess session.Store) {
+func PostServerUpdate(ctx *web.Context, f ServerCreateForm, fl *session.Flash, db *models.DB, sess session.Store) {
+	id := ctx.Params(":id")
+	var err error
+	if f, err = f.Validate(); err != nil {
+		fl.Error(err.Error())
+		ctx.Redirect(ctx.URLFor("edit-server", ":id", id))
+		return
+	}
+	s := models.Server{}
+	if err = db.First(&s, id).Error; err != nil || f.Name != s.Name {
+		fl.Error("没有找到目标服务器")
+		ctx.Redirect(ctx.URLFor("servers"))
+		return
+	}
+
+	if err = db.Model(&s).Update(map[string]interface{}{
+		"group_name": f.GroupName,
+		"address":    f.Address,
+	}).Error; err != nil {
+		fl.Error(err.Error())
+		ctx.Redirect(ctx.URLFor("edit-server", ":id", id))
+		return
+	}
+	fl.Success(fmt.Sprintf("服务器 %s 更新成功", f.Name))
 	ctx.Redirect("/servers")
 }
 

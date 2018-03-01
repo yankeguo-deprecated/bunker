@@ -18,10 +18,10 @@
             <div class="modal-body">
                 <form action="/logout" method="post">
                     {{.CSRF.CreateHTML}}
-                    <div class="from-group">
+                    <div>
                         <label class="text-danger">确定要退出登录么？</label>
                     </div>
-                    <div class="from-group text-right">
+                    <div class="text-right">
                         <button class="btn btn-danger btn-sm" type="submit">
                             <i class="fa fa-sign-out" aria-hidden="true"></i>&nbsp;退出登录</button>
                     </div>

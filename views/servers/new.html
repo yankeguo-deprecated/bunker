@@ -27,6 +27,9 @@
                         <hr/>
                     </div>
                     <div class="col-md-12">
+                        {{template "common/flash-alert" .}}
+                    </div>
+                    <div class="col-md-12">
                         <p>添加服务器之前，请确保主 SSH 公钥已经添加到了服务器的
                             <code>authorized_keys</code>文件中，
                             <a href="/servers/master-key">查看主 SSH 公钥&gt;&gt;</a>
@@ -52,7 +55,6 @@
                             <div class="form-group">
                                 <button class="btn btn-primary btn-sm" type="submit">
                                     <i class="fa fa-plus-circle"></i>&nbsp;添加服务器</button>
-                                {{template "common/flash-helpblock" .}}
                             </div>
                         </form>
                     </div>

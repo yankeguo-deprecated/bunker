@@ -36,9 +36,9 @@ func Mount(w *web.Web) {
 	w.Get("/servers", MustSignedInAsAdmin(), GetServersIndex).Name("servers")
 	w.Get("/servers/new", MustSignedInAsAdmin(), GetServersNew).Name("new-server")
 	w.Get("/servers/master-key", MustSignedInAsAdmin(), GetMasterKey).Name("master-key")
-	w.Post("/servers", MustSignedInAsAdmin(), csrf.Validate, binding.Form(ServerAddForm{}), PostServerCreate)
+	w.Post("/servers", MustSignedInAsAdmin(), csrf.Validate, binding.Form(ServerCreateForm{}), PostServerCreate)
 	w.Get("/servers/:id/edit", MustSignedInAsAdmin(), GetServerEdit).Name("edit-server")
-	w.Post("/servers/:id/update", MustSignedInAsAdmin(), csrf.Validate, binding.Form(ServerAddForm{}), PostServerUpdate).Name("update-server")
+	w.Post("/servers/:id/update", MustSignedInAsAdmin(), csrf.Validate, binding.Form(ServerCreateForm{}), PostServerUpdate).Name("update-server")
 	w.Post("/servers/:id/destroy", MustSignedInAsAdmin(), csrf.Validate, PostServerDestroy).Name("destroy-server")
 	/* users */
 	w.Get("/users", MustSignedInAsAdmin(), GetUsers)
