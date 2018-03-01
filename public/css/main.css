@@ -14,5 +14,10 @@ img.captcha-img {
 }
 
 div.bunker-toolbar {
-    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+hr {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
 }

@@ -40,21 +40,24 @@
                             {{.CSRF.CreateHTML}}
                             <div class="form-group form-group-sm">
                                 <label class="control-label">名称</label>
-                                <input type="text" class="form-control" name="name" placeholder="必须符合正则表达式 {{.NamePattern}}" value="{{.Server.Name}}" />
-                                <span class="help-block">名称唯一</span>
+                                <input type="text" class="form-control" name="name" placeholder="localhost" value="{{.Server.Name}}" />
+                                <span class="help-block">名称唯一，必须符合正则表达式
+                                    <code>{{.NamePattern}}</code>，建议使用目标服务器唯一 hostname</span>
                             </div>
                             <div class="form-group form-group-sm">
                                 <label class="control-label">分组</label>
-                                <input type="text" class="form-control" name="group_name" placeholder="必须符合正则表达式 {{.NamePattern}}" value="{{.Server.GroupName}}"
-                                />
+                                <input type="text" class="form-control" name="group_name" placeholder="default" value="{{.Server.GroupName}}" />
+                                <span class="help-block">必须符合正则表达式
+                                    <code>{{.NamePattern}}</code>
+                                </span>
                             </div>
                             <div class="form-group form-group-sm">
                                 <label class="control-label">地址</label>
-                                <input type="text" class="form-control" name="address" placeholder="10.10.10.1:22" value="{{.Server.Address}}" />
+                                <input type="text" class="form-control" name="address" placeholder="10.10.XXX.XXX:22" value="{{.Server.Address}}" />
+                                <span class="help-block">建议使用目标服务器的内网 IP</span>
                             </div>
                             <div class="form-group">
-                                <button class="btn btn-primary btn-sm" type="submit">
-                                    <i class="fa fa-plus-circle"></i>&nbsp;添加服务器</button>
+                                <button class="btn btn-primary btn-sm" type="submit">添加服务器</button>
                             </div>
                         </form>
                     </div>
