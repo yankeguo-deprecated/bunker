@@ -9,10 +9,7 @@
 package bunker
 
 import (
-	"errors"
-	"fmt"
 	"strings"
-	"time"
 
 	"golang.org/x/crypto/ssh"
 	"ireul.com/bunker/models"
@@ -142,54 +139,6 @@ type CreateGrantOption struct {
 	GroupName  string
 	TargetUser string
 	ExpiresIn  uint
-}
-
-// CreateGrant create a grant
-func (b *Bunker) CreateGrant(option CreateGrantOption) (err error) {
-	if err = b.ensureDB(); err != nil {
-		return
-	}
-	if (len(option.ServerName) == 0 && len(option.GroupName) == 0) || (len(option.ServerName) != 0 && len(option.GroupName) != 0) {
-		err = errors.New("invalid parameters, choose 'server' or 'group'")
-		return
-	}
-	var e *time.Time
-	if option.ExpiresIn > 0 {
-		_e := time.Now().Add(time.Duration(option.ExpiresIn) * time.Second)
-		e = &_e
-	}
-	u := models.User{}
-	if err = b.db.Find(&u, "account = ?", option.User).Error; err != nil || u.ID == 0 {
-		err = fmt.Errorf("user %s not found", option.User)
-		return
-	}
-	if len(option.ServerName) > 0 {
-		s := models.Server{}
-		if err = b.db.Find(&s, "name = ?", option.ServerName).Error; err != nil || s.ID == 0 {
-			err = fmt.Errorf("server %s not found", option.ServerName)
-			return
-		}
-		a := models.Grant{}
-		err = b.db.Where(map[string]interface{}{
-			"user_id":     u.ID,
-			"target_name": option.ServerName,
-			"target_type": models.GrantTargetServer,
-			"target_user": option.TargetUser,
-		}).Assign(map[string]interface{}{
-			"expires_at": e,
-		}).FirstOrCreate(&a).Error
-	} else {
-		a := models.Grant{}
-		err = b.db.Where(map[string]interface{}{
-			"user_id":     u.ID,
-			"target_name": option.GroupName,
-			"target_type": models.GrantTargetGroup,
-			"target_user": option.TargetUser,
-		}).Assign(map[string]interface{}{
-			"expires_at": e,
-		}).FirstOrCreate(&a).Error
-	}
-	return
 }
 
 // Shutdown the internal servers

@@ -101,46 +101,6 @@ var createServerCommand = cli.Command{
 	},
 }
 
-var createGrantCommand = cli.Command{
-	Name:  "create-grant",
-	Usage: "create a grant",
-	Flags: []cli.Flag{
-		cli.StringFlag{
-			Name:  "server",
-			Usage: "name of server",
-		},
-		cli.StringFlag{
-			Name:  "group",
-			Usage: "name of group",
-		},
-		cli.StringFlag{
-			Name:  "user",
-			Usage: "login of user",
-		},
-		cli.StringFlag{
-			Name:  "target-user",
-			Usage: "target user name",
-		},
-		cli.UintFlag{
-			Name:  "expires-in",
-			Usage: "expires in seconds",
-		},
-	},
-	Action: func(ctx *cli.Context) (err error) {
-		var b *bunker.Bunker
-		if b, err = createBunker(ctx); err != nil {
-			return
-		}
-		return b.CreateGrant(bunker.CreateGrantOption{
-			GroupName:  ctx.String("group"),
-			ServerName: ctx.String("server"),
-			User:       ctx.String("user"),
-			TargetUser: ctx.String("target-user"),
-			ExpiresIn:  ctx.Uint("expires-in"),
-		})
-	},
-}
-
 var runCommand = cli.Command{
 	Name:  "run",
 	Usage: "run the server",
@@ -170,7 +130,7 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:  "config",
-			Value: "config.toml",
+			Value: "/etc/bunker/config.toml",
 			Usage: "config file",
 		},
 	}
@@ -179,7 +139,6 @@ func main() {
 		runCommand,
 		createUserCommand,
 		createServerCommand,
-		createGrantCommand,
 	}
 	err := app.Run(os.Args)
 	if err != nil {
