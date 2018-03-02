@@ -21,6 +21,7 @@ import (
 type CombinedGrantItem struct {
 	User      string // target user
 	Name      string // server name
+	GroupName string // group name
 	ExpiresAt string // expires at
 }
 
@@ -35,6 +36,7 @@ func GetIndex(ctx *web.Context, r web.Render, a Auth, db *models.DB) {
 		ci = append(ci, CombinedGrantItem{
 			Name:      c.Name,
 			User:      c.User,
+			GroupName: c.GroupName,
 			ExpiresAt: TimeAgo(c.ExpiresAt),
 		})
 	}

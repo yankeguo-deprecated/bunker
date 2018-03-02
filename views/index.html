@@ -46,6 +46,7 @@
                             <tr>
                                 <td>Linux 账户</td>
                                 <td>服务器</td>
+                                <td>服务器组</td>
                                 <td>连接命令</td>
                                 <td>过期时间</td>
                             </tr>
@@ -55,7 +56,10 @@
                             <tr>
                                 <td>{{.User}}</td>
                                 <td>{{.Name}}</td>
-                                <td>ssh {{.User}}@{{.Name}}@{{$.Config.Domain}}</td>
+                                <td>{{.GroupName}}</td>
+                                <td>
+                                    <code>ssh {{.User}}@{{.Name}}@{{$.Config.Domain}}</code>
+                                </td>
                                 <td>{{.ExpiresAt}}</td>
                             </tr>
                             {{end}}

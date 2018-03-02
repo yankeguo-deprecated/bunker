@@ -164,6 +164,7 @@ func (w *DB) TargetUserHints(q string) (ns []string) {
 type CombinedGrant struct {
 	User      string // target user
 	Name      string // server name
+	GroupName string // group name
 	ExpiresAt *time.Time
 }
 
@@ -172,7 +173,7 @@ func (w *DB) GetCombinedGrants(uid uint) []CombinedGrant {
 	cs := []CombinedGrant{}
 	n := time.Now()
 	w.Raw(
-		`SELECT G.target_user AS user, S.name AS name, G.expires_at AS expires_at FROM grants AS G JOIN servers AS S ON (S.group_name = G.target_name AND G.target_type = ?) OR (S.name = G.target_name AND G.target_type = ?) WHERE G.user_id = ? AND (G.expires_at IS NULL OR G.expires_at > ?)`,
+		`SELECT G.target_user AS user, S.name AS name, S.group_name AS group_name, G.expires_at AS expires_at FROM grants AS G JOIN servers AS S ON (S.group_name = G.target_name AND G.target_type = ?) OR (S.name = G.target_name AND G.target_type = ?) WHERE G.user_id = ? AND (G.expires_at IS NULL OR G.expires_at > ?)`,
 		GrantTargetGroup,
 		GrantTargetServer,
 		uid,

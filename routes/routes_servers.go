@@ -124,7 +124,7 @@ func (f ServerCreateForm) Validate() (ServerCreateForm, error) {
 		return f, errors.New("服务器名称不符合规则")
 	}
 	if !models.NamePattern.MatchString(f.GroupName) {
-		return f, errors.New("分组名称不符合规则")
+		return f, errors.New("服务器组名称不符合规则")
 	}
 	if len(strings.Split(f.Address, ":")) < 2 {
 		f.Address = fmt.Sprintf("%s:22", f.Address)

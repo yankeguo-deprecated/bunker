@@ -122,9 +122,9 @@
                                         <td>{{.TargetUser}}</td>
                                         <td>
                                             {{if .IsGroup}}
-                                            <small class="text-muted">服务器组:</small>
+                                            <small class="text-success">服务器组:</small>
                                             {{else}}
-                                            <small class="text-muted">单服务器:</small>
+                                            <small class="text-primary">单服务器:</small>
                                             {{end}} {{.TargetName}}
                                         </td>
                                         <td {{if .IsExpired}}class="text-danger" {{else}}class="text-success" {{end}}>{{.ExpiresAt}}</td>
