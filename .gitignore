@@ -16,3 +16,8 @@
 # config.toml
 /config.toml
 
+# binfs
+binfs.gen.go
+
+# executable
+/cmd/bunker/bunker
