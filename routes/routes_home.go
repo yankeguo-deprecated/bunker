@@ -17,9 +17,29 @@ import (
 	"ireul.com/web/session"
 )
 
+// CombinedGrantItem combined grant
+type CombinedGrantItem struct {
+	User      string // target user
+	Name      string // server name
+	ExpiresAt string // expires at
+}
+
 // GetIndex get index page
 func GetIndex(ctx *web.Context, r web.Render, a Auth, db *models.DB) {
 	ctx.Data["MissingSSHKeys"] = db.CountUserSSHKeys(a.User()) == 0
+
+	ci := []CombinedGrantItem{}
+	cs := db.GetCombinedGrants(a.User().ID)
+
+	for _, c := range cs {
+		ci = append(ci, CombinedGrantItem{
+			Name:      c.Name,
+			User:      c.User,
+			ExpiresAt: TimeAgo(c.ExpiresAt),
+		})
+	}
+
+	ctx.Data["CombinedGrants"] = ci
 	ctx.HTML(200, "index")
 }
 

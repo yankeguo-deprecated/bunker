@@ -23,15 +23,54 @@
                     <a href="/settings/ssh-keys/new" style="color: white;">前去添加 &gt;&gt;</a>
                 </div>
             </div>
-            {{end}} {{if .Auth.User.IsBlocked}}
-            <div class="row">
-                <div class="col-md-12">
-                    <div class="alert alert-danger" role="alert">当前用户已经被禁用，将无法通过 SSH 访问目标服务器</div>
+        </div>
+        {{end}} {{if .Auth.User.IsBlocked}}
+        <div class="row">
+            <div class="col-md-12">
+                <div class="alert alert-danger" role="alert">当前用户已经被禁用，将无法通过 SSH 访问目标服务器</div>
+            </div>
+        </div>
+        {{end}}
+        <div class="row">
+            <div class="col-md-12">
+                <h4>当前可以访问的服务器</h4>
+                <hr/>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="panel panel-default">
+                    <table class="table table-hover table-striped">
+                        {{if .CombinedGrants}}
+                        <thead>
+                            <tr>
+                                <td>Linux 账户</td>
+                                <td>服务器</td>
+                                <td>连接命令</td>
+                                <td>过期时间</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{range .CombinedGrants}}
+                            <tr>
+                                <td>{{.User}}</td>
+                                <td>{{.Name}}</td>
+                                <td>ssh {{.User}}@{{.Name}}@{{$.Config.Domain}}</td>
+                                <td>{{.ExpiresAt}}</td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                        {{else}}
+                        <tr>
+                            <td class="text-muted text-center">没有可访问的服务器</td>
+                        </tr>
+                        {{end}}
+                    </table>
                 </div>
             </div>
-            {{end}}
         </div>
-        {{ template "common/foot" }}
+    </div>
+    {{ template "common/foot" }}
 </body>
 
 </html>
