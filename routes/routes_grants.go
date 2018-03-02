@@ -30,6 +30,7 @@ type GrantItem struct {
 	TargetUser string
 	ExpiresAt  string
 	IsExpired  bool
+	UpdatedAt  string
 }
 
 // GetGrantsIndex get grants index
@@ -54,6 +55,7 @@ func GetGrantsIndex(ctx *web.Context, db *models.DB, fl *session.Flash) {
 			TargetUser: g.TargetUser,
 			ExpiresAt:  TimeAgo(g.ExpiresAt),
 			IsExpired:  (g.ExpiresAt != nil && n.After(*g.ExpiresAt)),
+			UpdatedAt:  TimeAgo(&g.UpdatedAt),
 		})
 	}
 	ctx.Data["Grants"] = ti
@@ -129,16 +131,13 @@ func PostGrantsCreate(ctx *web.Context, f GrantCreateForm, fl *session.Flash, db
 	_userID, _ := strconv.Atoi(userID)
 	_targetType, _ := strconv.Atoi(f.TargetType)
 
-	err = db.Where(map[string]interface{}{
+	if err = db.Where(map[string]interface{}{
 		"user_id":     _userID,
 		"target_type": _targetType,
 		"target_name": f.TargetName,
 		"target_user": f.TargetUser,
-	}).Assign(am).FirstOrCreate(&g).Error
-	if err != nil {
+	}).Assign(am).FirstOrCreate(&g).Error; err != nil {
 		fl.Error(err.Error())
-	} else {
-		fl.Success("创建/修改授权成功")
 	}
 }
 

@@ -72,13 +72,12 @@ func (h *HTTP) ListenAndServe() (err error) {
 			AdapterConfig: h.Config.Redis.URL,
 		}))
 		h.web.Use(session.Sessioner(session.Options{
-			Adapter:        "redis",
-			AdapterConfig:  h.Config.Redis.URL,
-			CookieName:     "bunker_session",
-			Secure:         h.web.Env() == web.PROD,
-			Gclifetime:     3600,
-			CookieLifeTime: 3600,
-			Maxlifetime:    3600,
+			Adapter:       "redis",
+			AdapterConfig: h.Config.Redis.URL,
+			CookieName:    "bunker_session",
+			Secure:        h.web.Env() == web.PROD,
+			Gclifetime:    3600 * 4,
+			Maxlifetime:   3600 * 4,
 		}))
 		h.web.Use(csrf.Csrfer(csrf.Options{Secret: h.Config.Secret}))
 		h.web.Use(captcha.Captchaer())

@@ -27,6 +27,7 @@ type CombinedGrantItem struct {
 
 // GetIndex get index page
 func GetIndex(ctx *web.Context, r web.Render, a Auth, db *models.DB) {
+	ctx.Data["NavClass_Index"] = "active"
 	ctx.Data["MissingSSHKeys"] = db.CountUserSSHKeys(a.User()) == 0
 
 	ci := []CombinedGrantItem{}

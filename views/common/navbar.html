@@ -45,6 +45,10 @@
         <div class="collapse navbar-collapse" id="bunker-navbar-collapse">
             {{if .Auth.User.IsAdmin}}
             <ul class="nav navbar-nav">
+                <li class="{{.NavClass_Index}}">
+                    <a href="/">
+                        <i class="fa fa-home"></i>&nbsp;首页</a>
+                </li>
                 <li class="{{.NavClass_Servers}}">
                     <a href="/servers">
                         <i class="fa fa-server"></i>&nbsp;服务器管理</a>

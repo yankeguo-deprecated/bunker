@@ -67,14 +67,14 @@
                         <div class="panel panel-default">
                             <div class="panel-body">
                                 <form class="form-inline" action="/users/{{.User.ID}}/grants" method="POST">
-                                    {{.CSRF.CreateHTML}}
+                                    {{.CSRF.CreateHTML}} &nbsp;授权访问&nbsp;&nbsp;
                                     <div class="form-group form-group-sm">
-                                        <input type="text" class="form-control" placeholder="输入 Linux 账户" name="target_user" />
+                                        <input style="width: 12rem;" type="text" class="form-control" placeholder="输入 Linux 账户" name="target_user" />
                                     </div>
                                     &nbsp;
                                     <i class="fa fa-at"></i>&nbsp;
                                     <div class="form-group form-group-sm">
-                                        <select style="width: 8rem;" class="form-control" name="target_type">
+                                        <select style="width: 10rem;" class="form-control" name="target_type">
                                             <option value="1">单服务器</option>
                                             <option value="2">服务器组</option>
                                         </select>
@@ -82,16 +82,15 @@
                                     <div class="form-group form-group-sm">
                                         <input type="text" class="form-control" placeholder="输入服务器名" name="target_name" />
                                     </div>
-                                    &nbsp;
-                                    <i class="fa fa-clock-o"></i>&nbsp;
+                                    &nbsp;，&nbsp;
                                     <div class="form-group form-group-sm">
                                         <input style="width: 8rem;" type="number" class="form-control time-input-short" name="expires_in" value="1" />
                                     </div>
                                     <div class="form-group form-group-sm">
-                                        <select style="width: 6rem;" class="form-control" name="expires_unit">
-                                            <option value="h">小时</option>
-                                            <option value="d">天</option>
-                                            <option value="e">永久</option>
+                                        <select style="width: 10rem;" class="form-control" name="expires_unit">
+                                            <option value="h">小时后过期</option>
+                                            <option value="d">天后过期</option>
+                                            <option value="e">永久不过期</option>
                                         </select>
                                     </div>
                                     <button type="submit" class="btn btn-primary btn-sm pull-right">添加 / 更新</button>
@@ -111,7 +110,8 @@
                                         <td>ID</td>
                                         <td>Linux 账户</td>
                                         <td>目标</td>
-                                        <td>过期时间</td>
+                                        <td>修改时间</td>
+                                        <td>授权过期</td>
                                         <td></td>
                                     </tr>
                                 </thead>
@@ -127,6 +127,7 @@
                                             <small class="text-primary">单服务器:</small>
                                             {{end}} {{.TargetName}}
                                         </td>
+                                        <td>{{.UpdatedAt}}</td>
                                         <td {{if .IsExpired}}class="text-danger" {{else}}class="text-success" {{end}}>{{.ExpiresAt}}</td>
                                         <td>
                                             <a data-toggle="modal" data-target="#bunker-grant-destroy-modal" class="destroy-grant text-danger" href="#" data-userid="{{$.User.ID}}"
@@ -138,7 +139,7 @@
                                 </tbody>
                                 {{else}}
                                 <tr>
-                                    <td colspan="4" class="text-center text-muted">没有配置授权</td>
+                                    <td class="text-center text-muted">没有配置授权</td>
                                 </tr>
                                 {{end}}
                             </table>

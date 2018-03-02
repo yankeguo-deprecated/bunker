@@ -100,11 +100,11 @@
                                             {{else}} {{if .IsAdmin}}
                                             <a href="#" class="action-link text-warning" data-toggle="modal" data-target="#bunker-user-update-modal" data-action="revoke-admin"
                                                 data-id="{{.ID}}">
-                                                <i class="fa fa-minus-square"></i>&nbsp;降权</a>
+                                                <i class="fa fa-level-down"></i>&nbsp;降权</a>
                                             {{else}}
                                             <a href="#" class="action-link text-primary" data-toggle="modal" data-target="#bunker-user-update-modal" data-action="assign-admin"
                                                 data-id="{{.ID}}">
-                                                <i class="fa fa-plus-square"></i>&nbsp;提权</a>
+                                                <i class="fa fa-level-up"></i>&nbsp;提权</a>
                                             {{end}} &nbsp;|&nbsp; {{if .IsBlocked}}
                                             <a href="#" class="action-link text-success" data-toggle="modal" data-target="#bunker-user-update-modal" data-action="unblock"
                                                 data-id="{{.ID}}">
