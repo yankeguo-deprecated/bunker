@@ -10,8 +10,10 @@ package routes
 
 import (
 	"errors"
+	"fmt"
 
 	"ireul.com/bunker/models"
+	"ireul.com/bunker/types"
 	"ireul.com/web"
 	"ireul.com/web/captcha"
 	"ireul.com/web/session"
@@ -26,9 +28,14 @@ type CombinedGrantItem struct {
 }
 
 // GetIndex get index page
-func GetIndex(ctx *web.Context, r web.Render, a Auth, db *models.DB) {
+func GetIndex(ctx *web.Context, r web.Render, a Auth, db *models.DB, cfg types.Config) {
 	ctx.Data["NavClass_Index"] = "active"
 	ctx.Data["MissingSSHKeys"] = db.CountUserSSHKeys(a.User()) == 0
+	if cfg.SSHD.Port != 22 {
+		ctx.Data["SSHCommandSuffix"] = fmt.Sprintf(" -p %d", cfg.SSHD.Port)
+	} else {
+		ctx.Data["SSHCommandSuffix"] = ""
+	}
 
 	ci := []CombinedGrantItem{}
 	cs := db.GetCombinedGrants(a.User().ID)

@@ -58,7 +58,7 @@
                                 <td>{{.Name}}</td>
                                 <td>{{.GroupName}}</td>
                                 <td>
-                                    <code>ssh {{.User}}@{{.Name}}@{{$.Config.Domain}}</code>
+                                    <code>ssh {{.User}}@{{.Name}}@{{$.Config.Domain}}{{$.SSHCommandSuffix}}</code>
                                 </td>
                                 <td>{{.ExpiresAt}}</td>
                             </tr>
