@@ -144,5 +144,7 @@ func PostGrantsCreate(ctx *web.Context, f GrantCreateForm, fl *session.Flash, db
 
 // PostGrantDestroy destroy a grant
 func PostGrantDestroy(ctx *web.Context, db *models.DB) {
-	ctx.Redirect("/grants")
+	userID := ctx.Params(":userid")
+	defer ctx.Redirect(ctx.URLFor("user-grants", ":userid", userID))
+	db.Delete(&models.Grant{}, "user_id = ? AND id = ?", userID, ctx.Params(":id"))
 }

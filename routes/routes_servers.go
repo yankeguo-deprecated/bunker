@@ -148,7 +148,7 @@ func PostServerCreate(ctx *web.Context, f ServerCreateForm, fl *session.Flash, d
 	err = db.Create(&s).Error
 	if err == nil {
 		fl.Success(fmt.Sprintf("添加服务器 %s 成功", f.Name))
-		ctx.Redirect(ctx.URLFor("new-server"))
+		ctx.Redirect(AppendQuery(ctx.URLFor("new-server"), "group_name", f.GroupName))
 	} else {
 		fl.Error(err.Error())
 		ctx.Redirect(ctx.URLFor("new-server"))

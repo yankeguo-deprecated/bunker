@@ -15,6 +15,34 @@
 
 <body>
     {{ template "common/navbar" .}}
+
+    <!-- Grant Destroy Modal -->
+    <div class="modal fade" id="bunker-grant-destroy-modal" tabindex="-1" role="dialog" aria-labelledby="bunker-grant-destroy-modal-label">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <label class="modal-title" id="bunker-grant-destroy-modal-label">删除该授权</label>
+                </div>
+                <div class="modal-body">
+                    <form id="grant-destroy" action="/NOT_EXISTED" method="post">
+                        {{.CSRF.CreateHTML}}
+                        <div>
+                            <label class="text-danger">确定要删除该授权么？</label>
+                        </div>
+                        <div class="text-right">
+                            <button class="btn btn-danger btn-sm" type="submit">
+                                <i class="fa fa-trash" aria-hidden="true"></i>&nbsp;删除</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <div class="container">
         <div class="row">
             <div class="col-md-3">
@@ -100,6 +128,11 @@
                                             {{end}} {{.TargetName}}
                                         </td>
                                         <td {{if .IsExpired}}class="text-danger" {{else}}class="text-success" {{end}}>{{.ExpiresAt}}</td>
+                                        <td>
+                                            <a data-toggle="modal" data-target="#bunker-grant-destroy-modal" class="destroy-grant text-danger" href="#" data-userid="{{$.User.ID}}"
+                                                data-id="{{.ID}}">
+                                                <i class="fa fa-trash"></i>&nbsp;删除</a>
+                                        </td>
                                     </tr>
                                     {{end}}
                                 </tbody>
@@ -145,6 +178,9 @@
                     }
                 },
                 listLocation: "hints"
+            })
+            $("a.destroy-grant").click(function (e) {
+                $('form#grant-destroy').attr("action", "/users/" + $(e.target).attr('data-userid') + "/grants/" + $(e.target).attr("data-id") + "/destroy")
             })
         })
     </script>
