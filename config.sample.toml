@@ -3,7 +3,7 @@ secret = "abc123"
 domain = "localhost"
 title = "Bunker System"
 [db]
-url = "root@tcp(localhost:3306)/bunker_dev?parseTime=true&charset=utf8mb4,utf8"
+url = "mysql://root@localhost:3306/bunker_dev"
 [redis]
 url = "redis://localhost:6379"
 [http]
