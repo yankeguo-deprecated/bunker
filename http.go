@@ -75,7 +75,7 @@ func (h *HTTP) ListenAndServe() (err error) {
 			Adapter:       "redis",
 			AdapterConfig: h.Config.Redis.URL,
 			CookieName:    "bunker_session",
-			Secure:        h.web.Env() == web.PROD,
+			Secure:        h.Config.HTTP.Secure,
 			Gclifetime:    3600 * 4,
 			Maxlifetime:   3600 * 4,
 		}))

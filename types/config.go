@@ -33,8 +33,9 @@ type DBConfig struct {
 
 // HTTPConfig config for http
 type HTTPConfig struct {
-	Host string `toml:"host"` // host for http
-	Port int    `toml:"port"` // port for http
+	Host   string `toml:"host"`   // host for http
+	Port   int    `toml:"port"`   // port for http
+	Secure bool   `toml:"secure"` // this will enable secure cookie
 }
 
 // SSHDConfig config for sshd
