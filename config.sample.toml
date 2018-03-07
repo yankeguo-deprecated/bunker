@@ -3,9 +3,7 @@ secret = "abc123"
 domain = "localhost"
 title = "Bunker System"
 [db]
-url = "mysql://root@localhost:3306/bunker_dev"
-[redis]
-url = "redis://localhost:6379"
+file = "/tmp/bunker.sqlite3"
 [http]
 host = "localhost"
 port = 3000

@@ -11,14 +11,13 @@ package models
 import (
 	"errors"
 	"fmt"
-	"net/url"
 	"regexp"
 	"strings"
 	"time"
 
 	"ireul.com/bunker/types"
-	"ireul.com/mysql" // mysql adapter
 	"ireul.com/orm"
+	_ "ireul.com/sqlite3" // sqlite3 adapter
 )
 
 // NamePattern general name pattern
@@ -41,30 +40,8 @@ type DB struct {
 
 // NewDB create a new database from Config struct
 func NewDB(cfg types.Config) (db *DB, err error) {
-	var u *url.URL
-	if u, err = url.Parse(cfg.DB.URL); err != nil {
-		return
-	}
-	if u.Scheme != "mysql" {
-		err = errors.New("only mysql:// is supported")
-		return
-	}
-
-	// rebuild DSN from mysql:// url
-	c := mysql.NewConfig()
-	c.User = u.User.Username()
-	c.Passwd, _ = u.User.Password()
-	c.Net = "tcp"
-	c.Loc = time.Local
-	c.Addr = u.Host
-	c.DBName = u.Path
-	if strings.HasPrefix(c.DBName, "/") {
-		c.DBName = c.DBName[1:]
-	}
-	c.ParseTime = true
-
 	var d *orm.DB
-	if d, err = orm.Open("mysql", c.FormatDSN()); err != nil {
+	if d, err = orm.Open("sqlite3", cfg.DB.File); err != nil {
 		return
 	}
 	d = d.LogMode(cfg.Env != "production")

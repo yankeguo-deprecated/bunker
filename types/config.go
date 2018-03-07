@@ -18,18 +18,12 @@ type Config struct {
 	HTTP    HTTPConfig    `toml:"http"`    // http config
 	SSHD    SSHDConfig    `toml:"sshd"`    // sshd config
 	SSH     SSHConfig     `toml:"ssh"`     // ssh config
-	Redis   RedisConfig   `toml:"redis"`   // redis config
 	Sandbox SandboxConfig `toml:"sandbox"` // sandbox config
-}
-
-// RedisConfig redis config
-type RedisConfig struct {
-	URL string `toml:"url"`
 }
 
 // DBConfig config for DB
 type DBConfig struct {
-	URL string `toml:"url"` // mysql url (golang dsn)
+	File string `toml:"file"` // sqlite3 file
 }
 
 // HTTPConfig config for http

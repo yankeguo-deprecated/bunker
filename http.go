@@ -19,11 +19,9 @@ import (
 	"ireul.com/bunker/types"
 	"ireul.com/web"
 	"ireul.com/web/cache"
-	_ "ireul.com/web/cache/redis" // redis cache adapter
 	"ireul.com/web/captcha"
 	"ireul.com/web/csrf"
 	"ireul.com/web/session"
-	_ "ireul.com/web/session/redis" // redis session adapter
 )
 
 var (
@@ -67,17 +65,12 @@ func (h *HTTP) ListenAndServe() (err error) {
 			Directory: "views",
 			BinFS:     h.web.Env() != web.DEV,
 		}))
-		h.web.Use(cache.Cacher(cache.Options{
-			Adapter:       "redis",
-			AdapterConfig: h.Config.Redis.URL,
-		}))
+		h.web.Use(cache.Cacher())
 		h.web.Use(session.Sessioner(session.Options{
-			Adapter:       "redis",
-			AdapterConfig: h.Config.Redis.URL,
-			CookieName:    "bunker_session",
-			Secure:        h.Config.HTTP.Secure,
-			Gclifetime:    3600 * 4,
-			Maxlifetime:   3600 * 4,
+			CookieName:  "bunker_session",
+			Secure:      h.Config.HTTP.Secure,
+			Gclifetime:  3600 * 4,
+			Maxlifetime: 3600 * 4,
 		}))
 		h.web.Use(csrf.Csrfer(csrf.Options{Secret: h.Config.Secret}))
 		h.web.Use(captcha.Captchaer())
