@@ -33,7 +33,34 @@
         {{end}}
         <div class="row">
             <div class="col-md-12">
-                <h4>当前可以访问的服务器</h4>
+                <h4>沙箱环境</h4>
+                <hr/>
+            </div>
+            <div class="col-md-4">
+                <label>连接方式</label>
+                <p>
+                    <code>ssh {{.Config.Domain}}{{.SSHCommandSuffix}}</code>
+                </p>
+            </div>
+            <div class="col-md-8">
+                <label>注意事项</label>
+                <ul>
+                    <li>沙箱环境互相隔离，可以自由使用 root 权限</li>
+                    <li>
+                        系统自动将
+                        <code>/root/.ssh/id_rsa.pub</code>公钥文件同步到数据库</li>
+                    <li>系统自动将授权访问的服务器同步到
+                        <code>/root/.ssh/config</code>文件中</li>
+                    <li>
+                        <code>/root</code>为持久目录，存放在其他位置的文件不保证可以持久保存</li>
+                    <li>
+                        <code>/shared</code>为共享目录，与其他用户共享访问</li>
+                </ul>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <h4>授权访问的服务器</h4>
                 <hr/>
             </div>
         </div>

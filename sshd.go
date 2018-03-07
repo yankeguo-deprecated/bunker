@@ -187,7 +187,26 @@ func (s *SSHD) updateSandboxPublicKey(sb sandbox.Sandbox, account string) (err e
 	if pk, _, _, _, err = ssh.ParseAuthorizedKey([]byte(ak)); err != nil {
 		return
 	}
-	err = s.db.UpdateSandboxPublicKeyForAccount(ssh.FingerprintSHA256(pk), account)
+	return s.db.UpdateSandboxPublicKeyForAccount(ssh.FingerprintSHA256(pk), account)
+}
+
+func (s *SSHD) updateSandboxSSHConfig(sb sandbox.Sandbox, account string) (err error) {
+	u := models.User{}
+	if err = s.db.First(&u, "account = ?", account).Error; err != nil || u.ID == 0 {
+		err = fmt.Errorf("user with account %s not found", account)
+		return
+	}
+	cg := s.db.GetCombinedGrants(u.ID)
+	se := make([]sandbox.SSHEntry, 0)
+	for _, c := range cg {
+		se = append(se, sandbox.SSHEntry{
+			Name: fmt.Sprintf("%s-%s", c.Name, c.User),
+			Host: s.Config.Domain,
+			Port: uint(s.Config.SSHD.Port),
+			User: fmt.Sprintf("%s@%s", c.User, c.Name),
+		})
+	}
+	_, _, err = sb.ExecScript(sandbox.ScriptSeedSSHConfig(se))
 	return
 }
 
@@ -215,8 +234,10 @@ func (s *SSHD) handleRawConn(c net.Conn) {
 		if sb, err = s.sandboxManager.FindOrCreate(userAccount); err != nil {
 			return
 		}
-		// update sandbox public key, ignore error
+		// update database from sandbox public key, ignore error
 		s.updateSandboxPublicKey(sb, userAccount)
+		// update sandbox .ssh/config
+		s.updateSandboxSSHConfig(sb, userAccount)
 		// range channels
 		wg := &sync.WaitGroup{}
 		for nchn := range cchan {
