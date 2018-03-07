@@ -16,3 +16,6 @@ port = 2222
 private_key = "/etc/bunker/host_rsa"
 [ssh]
 private_key = "/etc/bunker/id_rsa"
+[sandbox]
+image = "ireul/sandbox"
+datadir = "/var/bunker/sandboxdata"

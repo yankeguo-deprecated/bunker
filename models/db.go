@@ -217,3 +217,23 @@ L1:
 	}
 	return out
 }
+
+// UpdateSandboxPublicKeyForAccount update sandbox public key for user with account
+func (w *DB) UpdateSandboxPublicKeyForAccount(fp string, account string) (err error) {
+	fp = strings.TrimSpace(fp)
+	var u = User{}
+	if err = w.First(&u, "account = ?", account).Error; err != nil || u.ID == 0 {
+		err = fmt.Errorf("user with account %s not found", account)
+	}
+	var k = Key{}
+	if err = w.Attrs(map[string]interface{}{
+		"name":        "sandbox",
+		"fingerprint": fp,
+	}).FirstOrCreate(&k, map[string]interface{}{
+		"user_id":    u.ID,
+		"is_sandbox": true,
+	}).Error; err != nil {
+		return
+	}
+	return
+}

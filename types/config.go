@@ -10,15 +10,16 @@ package types
 
 // Config config struct for Bunker, mapped to config.yaml
 type Config struct {
-	Env    string      `toml:"env"`    // application environment
-	Secret string      `toml:"secret"` // secret of CSRF
-	Title  string      `toml:"title"`  // site title
-	Domain string      `toml:"domain"` // domain name for this site, for display
-	DB     DBConfig    `toml:"db"`     // db config
-	HTTP   HTTPConfig  `toml:"http"`   // http config
-	SSHD   SSHDConfig  `toml:"sshd"`   // sshd config
-	SSH    SSHConfig   `toml:"ssh"`    // ssh config
-	Redis  RedisConfig `toml:"redis"`  // redis config
+	Env     string        `toml:"env"`     // application environment
+	Secret  string        `toml:"secret"`  // secret of CSRF
+	Title   string        `toml:"title"`   // site title
+	Domain  string        `toml:"domain"`  // domain name for this site, for display
+	DB      DBConfig      `toml:"db"`      // db config
+	HTTP    HTTPConfig    `toml:"http"`    // http config
+	SSHD    SSHDConfig    `toml:"sshd"`    // sshd config
+	SSH     SSHConfig     `toml:"ssh"`     // ssh config
+	Redis   RedisConfig   `toml:"redis"`   // redis config
+	Sandbox SandboxConfig `toml:"sandbox"` // sandbox config
 }
 
 // RedisConfig redis config
@@ -48,4 +49,10 @@ type SSHDConfig struct {
 // SSHConfig config for ssh
 type SSHConfig struct {
 	PrivateKey string `toml:"private_key"` // private key file, for ssh clien key
+}
+
+// SandboxConfig sandbox config
+type SandboxConfig struct {
+	Image   string `toml:"image"`
+	DataDir string `toml:"datadir"`
 }

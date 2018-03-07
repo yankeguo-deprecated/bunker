@@ -19,4 +19,5 @@ type Key struct {
 	UserID      uint       `orm:"not null;index" json:"userId"`             // user id
 	Fingerprint string     `orm:"not null;unique_index" json:"fingerprint"` // fingerprint of public key, sha256 fingerprint
 	UsedAt      *time.Time `orm:"" json:"usedAt"`                           // last seen at
+	IsSandbox   bool       `orm:"not null" json:"is_sandbox"`               // is sandbox
 }

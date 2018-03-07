@@ -80,6 +80,7 @@ type SSHKeyItem struct {
 	Fingerprint string
 	UsedAt      string
 	CreatedAt   string
+	IsSandbox   bool
 }
 
 // GetSettingsSSHKeysIndex get keys
@@ -97,6 +98,7 @@ func GetSettingsSSHKeysIndex(ctx *web.Context, a Auth, db *models.DB) {
 			Fingerprint: k.Fingerprint,
 			UsedAt:      TimeAgo(k.UsedAt),
 			CreatedAt:   TimeAgo(&k.CreatedAt),
+			IsSandbox:   k.IsSandbox,
 		})
 	}
 
@@ -162,5 +164,5 @@ func PostSettingsSSHKeysCreate(ctx *web.Context, a Auth, f SSHKeyCreateForm, fl 
 // PostSettingsSSHKeysDestroy destroy a ssh key
 func PostSettingsSSHKeysDestroy(ctx *web.Context, a Auth, db *models.DB) {
 	defer ctx.Redirect("/settings/ssh-keys")
-	db.Delete(&models.Key{}, "user_id = ? AND id = ?", a.User().ID, ctx.Params(":id"))
+	db.Delete(&models.Key{}, "user_id = ? AND id = ? AND is_sandbox = ?", a.User().ID, ctx.Params(":id"), false)
 }

@@ -87,9 +87,13 @@
                                         <td>{{.CreatedAt}}</td>
                                         <td>{{.UsedAt}}</td>
                                         <td>
+                                            {{if .IsSandbox}}
+                                            <span class="label label-default">沙箱密钥</span>
+                                            {{else}}
                                             <a href="#" class="text-danger ssh-key-destroy-btn" data-id="{{.ID}}" data-toggle="modal" data-target="#bunker-ssh-key-destroy-modal">
                                                 <i class="fa fa-trash"></i>&nbsp;删除
                                             </a>
+                                            {{end}}
                                         </td>
                                     </tr>
                                     {{end}} {{else}}
