@@ -17,7 +17,7 @@ import (
 
 // Mount mount all routes
 func Mount(w *web.Web) {
-	w.Use(GeneralFilter)
+	w.Use(GeneralFilter())
 	w.Use(Authenticator())
 	/* home */
 	w.Get("/", MustSignedIn(), GetIndex).Name("index")
@@ -57,7 +57,10 @@ func Mount(w *web.Web) {
 }
 
 // GeneralFilter the general filter
-func GeneralFilter(ctx *web.Context, cfg types.Config) {
-	ctx.Data["Config"] = cfg
-	ctx.Next()
+func GeneralFilter() web.Handler {
+	return func(ctx *web.Context, cfg types.Config) {
+		ctx.Header().Set("X-Frame-Options", "DENY")
+		ctx.Data["Config"] = cfg
+		ctx.Next()
+	}
 }
