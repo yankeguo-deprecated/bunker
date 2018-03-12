@@ -47,7 +47,6 @@ func GenerateClientAuthorizedKey(cfg types.Config) string {
 type ServerItem struct {
 	ID        uint
 	Name      string
-	GroupName string
 	Address   string
 	CreatedAt string
 	UpdatedAt string
@@ -59,7 +58,7 @@ type ServerItems []ServerItem
 
 func (a ServerItems) Len() int           { return len(a) }
 func (a ServerItems) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a ServerItems) Less(i, j int) bool { return a[i].GroupName < a[j].GroupName }
+func (a ServerItems) Less(i, j int) bool { return a[i].Name < a[j].Name }
 
 // GetServersIndex list all servers
 func GetServersIndex(ctx *web.Context, cfg types.Config, db *models.DB, sess session.Store) {
@@ -75,7 +74,6 @@ func GetServersIndex(ctx *web.Context, cfg types.Config, db *models.DB, sess ses
 		items = append(items, ServerItem{
 			ID:        s.ID,
 			Name:      s.Name,
-			GroupName: s.GroupName,
 			Address:   s.Address,
 			CreatedAt: TimeAgo(&s.CreatedAt),
 			UpdatedAt: TimeAgo(&s.UpdatedAt),
@@ -93,39 +91,31 @@ func GetServersIndex(ctx *web.Context, cfg types.Config, db *models.DB, sess ses
 func GetServersNew(ctx *web.Context, sess session.Store) {
 	ctx.Data["NavClass_Servers"] = "active"
 	ctx.Data["Server"] = map[string]string{
-		"Name":      ctx.Query("name"),
-		"GroupName": ctx.Query("group_name"),
-		"Address":   ctx.Query("address"),
+		"Name":    ctx.Query("name"),
+		"Address": ctx.Query("address"),
 	}
 	ctx.HTML(200, "servers/new")
 }
 
 // ServerCreateForm server add form
 type ServerCreateForm struct {
-	Name      string `form:"name"`
-	GroupName string `form:"group_name"`
-	Address   string `form:"address"`
+	Name    string `form:"name"`
+	Address string `form:"address"`
 }
 
 // Validate validate
 func (f ServerCreateForm) Validate() (ServerCreateForm, error) {
 	f.Name = strings.TrimSpace(f.Name)
-	f.GroupName = strings.TrimSpace(f.GroupName)
 	f.Address = strings.TrimSpace(f.Address)
 
 	if len(f.Address) == 0 {
 		return f, errors.New("服务器地址不能为空")
 	}
-	if len(f.GroupName) == 0 {
-		f.GroupName = "default"
-	}
 
 	if !models.NamePattern.MatchString(f.Name) {
 		return f, errors.New("服务器名称不符合规则")
 	}
-	if !models.NamePattern.MatchString(f.GroupName) {
-		return f, errors.New("服务器组名称不符合规则")
-	}
+
 	if len(strings.Split(f.Address, ":")) < 2 {
 		f.Address = fmt.Sprintf("%s:22", f.Address)
 	}
@@ -137,22 +127,20 @@ func PostServerCreate(ctx *web.Context, f ServerCreateForm, fl *session.Flash, d
 	var err error
 	if f, err = f.Validate(); err != nil {
 		fl.Error(err.Error())
-		ctx.Redirect(AppendQuery(ctx.URLFor("new-server"), "name", f.Name, "group_name", f.GroupName, "address", f.Address))
+		ctx.Redirect(AppendQuery(ctx.URLFor("new-server"), "name", f.Name, "address", f.Address))
 		return
 	}
 	s := models.Server{
-		Name:      f.Name,
-		GroupName: f.GroupName,
-		Address:   f.Address,
+		Name:    f.Name,
+		Address: f.Address,
 	}
 	err = db.Create(&s).Error
 	if err == nil {
 		fl.Success(fmt.Sprintf("添加服务器 %s 成功", f.Name))
-		ctx.Redirect(AppendQuery(ctx.URLFor("new-server"), "group_name", f.GroupName))
 	} else {
 		fl.Error(err.Error())
-		ctx.Redirect(ctx.URLFor("new-server"))
 	}
+	ctx.Redirect(ctx.URLFor("new-server"))
 }
 
 // GetServerEdit get server edit
@@ -183,11 +171,7 @@ func PostServerUpdate(ctx *web.Context, f ServerCreateForm, fl *session.Flash, d
 		ctx.Redirect(ctx.URLFor("servers"))
 		return
 	}
-
-	if err = db.Model(&s).Update(map[string]interface{}{
-		"group_name": f.GroupName,
-		"address":    f.Address,
-	}).Error; err != nil {
+	if err = db.Model(&s).Update(map[string]interface{}{"address": f.Address}).Error; err != nil {
 		fl.Error(err.Error())
 		ctx.Redirect(ctx.URLFor("edit-server", ":id", id))
 		return

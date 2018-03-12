@@ -16,15 +16,16 @@ import (
 	"time"
 
 	"ireul.com/bunker/types"
+	"ireul.com/com"
 	"ireul.com/orm"
 	_ "ireul.com/sqlite3" // sqlite3 adapter
 )
 
 // NamePattern general name pattern
-var NamePattern = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\._-]{3,}$`)
+var NamePattern = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\._\-]{3,}$`)
 
-// HintPattern general name hint pattern
-var HintPattern = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\._-]*$`)
+// WildcardPattern wildcard pattern
+var WildcardPattern = regexp.MustCompile(`^[a-zA-Z0-9\._\*\-]*$`)
 
 // Model basic model, not using orm.Model, no deletedAt
 type Model struct {
@@ -77,19 +78,13 @@ func (w *DB) FindUserByLogin(account string, password string) (*User, error) {
 }
 
 // CheckGrant check target grant
-func (w *DB) CheckGrant(user User, srv Server, targetUser string) (err error) {
-	g := Grant{}
-	w.Where("user_id = ? AND target_user = ? AND ((target_name = ? AND target_type = ?) OR (target_name = ? AND target_type = ?)) AND (expires_at IS NULL OR expires_at > ?)",
-		user.ID,
-		targetUser,
-		srv.Name,
-		GrantTargetServer,
-		srv.GroupName,
-		GrantTargetGroup,
-		time.Now(),
-	).First(&g)
-	if g.ID != 0 {
-		return nil
+func (w *DB) CheckGrant(u User, s Server, targetUser string) (err error) {
+	gs := []Grant{}
+	w.Find(&gs, "user_id = ? AND target_user = ? AND (expires_at IS NULL OR expires_at > ?)", u.ID, targetUser, time.Now())
+	for _, g := range gs {
+		if com.MatchAsterisk(g.ServerName, s.Name) {
+			return nil
+		}
 	}
 	return fmt.Errorf("Grant not find")
 }
@@ -103,7 +98,7 @@ func (w *DB) CountUserSSHKeys(u *User) (count uint) {
 // UserHints user account hints
 func (w *DB) UserHints(q string) (ns []string) {
 	ns = make([]string, 0)
-	if !HintPattern.MatchString(q) {
+	if !WildcardPattern.MatchString(q) {
 		return
 	}
 	q = strings.ToLower(q) + "%"
@@ -118,7 +113,7 @@ func (w *DB) UserHints(q string) (ns []string) {
 // ServerHints server name hints
 func (w *DB) ServerHints(q string) (ns []string) {
 	ns = make([]string, 0)
-	if !HintPattern.MatchString(q) {
+	if !WildcardPattern.MatchString(q) {
 		return
 	}
 	q = strings.ToLower(q) + "%"
@@ -130,25 +125,10 @@ func (w *DB) ServerHints(q string) (ns []string) {
 	return
 }
 
-// GroupHints group name hints
-func (w *DB) GroupHints(q string) (ns []string) {
-	ns = make([]string, 0)
-	if !HintPattern.MatchString(q) {
-		return
-	}
-	q = strings.ToLower(q) + "%"
-	us := make([]Server, 0)
-	w.Select("DISTINCT group_name").Where("group_name LIKE ?", q).Find(&us)
-	for _, u := range us {
-		ns = append(ns, u.GroupName)
-	}
-	return
-}
-
 // TargetUserHints target user hints
 func (w *DB) TargetUserHints(q string) (ns []string) {
 	ns = make([]string, 0)
-	if !HintPattern.MatchString(q) {
+	if !WildcardPattern.MatchString(q) {
 		return
 	}
 	q = strings.ToLower(q) + "%"
@@ -162,35 +142,38 @@ func (w *DB) TargetUserHints(q string) (ns []string) {
 
 // CombinedGrant combined grant
 type CombinedGrant struct {
-	User      string // target user
-	Name      string // server name
-	GroupName string // group name
-	ExpiresAt *time.Time
+	TargetUser string // target user
+	ServerName string // server name
+	ExpiresAt  *time.Time
 }
 
 // GetCombinedGrants get valid combined grants for user
 func (w *DB) GetCombinedGrants(uid uint) []CombinedGrant {
-	cs := []CombinedGrant{}
-	n := time.Now()
-	w.Raw(
-		`SELECT G.target_user AS user, S.name AS name, S.group_name AS group_name, G.expires_at AS expires_at FROM grants AS G JOIN servers AS S ON (S.group_name = G.target_name AND G.target_type = ?) OR (S.name = G.target_name AND G.target_type = ?) WHERE G.user_id = ? AND (G.expires_at IS NULL OR G.expires_at > ?)`,
-		GrantTargetGroup,
-		GrantTargetServer,
-		uid,
-		n,
-	).Scan(&cs)
 	out := []CombinedGrant{}
-L1:
-	for _, ic := range cs {
-		for i, oc := range out {
-			if ic.User == oc.User && ic.Name == oc.Name {
-				if ic.ExpiresAt == nil || (oc.ExpiresAt != nil && ic.ExpiresAt.After(*oc.ExpiresAt)) {
-					out[i].ExpiresAt = ic.ExpiresAt
+	ss := []Server{}
+	w.Find(&ss)
+	gs := []Grant{}
+	w.Find(&gs, "user_id = ? AND (expires_at IS NULL OR expires_at > ?)", uid, time.Now())
+	for _, g := range gs {
+	L2:
+		for _, s := range ss {
+			if com.MatchAsterisk(g.ServerName, s.Name) {
+				for i, o := range out {
+					// found same server same user, update expires_at
+					if o.ServerName == s.Name &&
+						o.TargetUser == g.TargetUser &&
+						o.ExpiresAt != nil && (g.ExpiresAt == nil || g.ExpiresAt.After(*o.ExpiresAt)) {
+						out[i].ExpiresAt = g.ExpiresAt
+						continue L2
+					}
 				}
-				continue L1
+				out = append(out, CombinedGrant{
+					TargetUser: g.TargetUser,
+					ServerName: s.Name,
+					ExpiresAt:  g.ExpiresAt,
+				})
 			}
 		}
-		out = append(out, ic)
 	}
 	return out
 }

@@ -45,16 +45,18 @@
             <div class="col-md-8">
                 <label>注意事项</label>
                 <ul>
-                    <li>沙箱环境互相隔离，可以自由使用 root 权限</li>
+                    <li>沙箱环境互相隔离，可以自由使用
+                        <code>root</code> 权限</li>
                     <li>
                         系统自动将
-                        <code>/root/.ssh/id_rsa.pub</code>公钥文件同步到数据库</li>
-                    <li>系统自动将授权访问的服务器同步到
-                        <code>/root/.ssh/config</code>文件中</li>
+                        <code>/root/.ssh/id_rsa.pub</code>公钥文件同步到数据库，并自动更新
+                        <code>/root/.ssh/config</code>文件</li>
                     <li>
                         <code>/root</code>为持久目录，存放在其他位置的文件不保证可以持久保存</li>
                     <li>
                         <code>/shared</code>为共享目录，与其他用户共享访问</li>
+                    <li>建议使用
+                        <code>tmux</code> 等会话保持工具</li>
                 </ul>
             </div>
         </div>
@@ -73,7 +75,6 @@
                             <tr>
                                 <td>Linux 账户</td>
                                 <td>服务器</td>
-                                <td>服务器组</td>
                                 <td>连接命令</td>
                                 <td>授权过期</td>
                             </tr>
@@ -81,11 +82,10 @@
                         <tbody>
                             {{range .CombinedGrants}}
                             <tr>
-                                <td>{{.User}}</td>
-                                <td>{{.Name}}</td>
-                                <td>{{.GroupName}}</td>
+                                <td>{{.TargetUser}}</td>
+                                <td>{{.ServerName}}</td>
                                 <td>
-                                    <code>ssh {{.User}}@{{.Name}}@{{$.Config.Domain}}{{$.SSHCommandSuffix}}</code>
+                                    <code>ssh {{.TargetUser}}@{{.ServerName}}@{{$.Config.Domain}}{{$.SSHCommandSuffix}}</code>
                                 </td>
                                 <td>{{.ExpiresAt}}</td>
                             </tr>

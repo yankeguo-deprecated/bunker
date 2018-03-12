@@ -21,10 +21,10 @@ const scriptGenerateSSHKey = `#!/bin/bash
 # write README
 echo "注意事项:
 1. 沙箱环境互相隔离，可以自由使用 root 权限
-2. 系统自动将 /root/.ssh/id_rsa.pub 公钥文件同步到数据库
-3. 系统自动将授权访问的服务器同步到 /root/.ssh/config 文件中
-4. /root 为持久目录，存放在其他位置的文件不保证可以持久保存
-5. /shared 为共享目录，与其他用户共享访问
+2. 系统自动将 id_rsa.pub 公钥文件同步到数据库，并自动更新 .ssh/config 文件
+3. /root 为持久目录，存放在其他位置的文件不保证可以持久保存
+4. /shared 为共享目录，与其他用户共享访问
+5. 建议使用 tmux 等会话保持工具
 " > /root/README
 
 # restore .bashrc .profile

@@ -21,10 +21,9 @@ import (
 
 // CombinedGrantItem combined grant
 type CombinedGrantItem struct {
-	User      string // target user
-	Name      string // server name
-	GroupName string // group name
-	ExpiresAt string // expires at
+	TargetUser string // target user
+	ServerName string // server name
+	ExpiresAt  string // expires at
 }
 
 // GetIndex get index page
@@ -42,10 +41,9 @@ func GetIndex(ctx *web.Context, r web.Render, a Auth, db *models.DB, cfg types.C
 
 	for _, c := range cs {
 		ci = append(ci, CombinedGrantItem{
-			Name:      c.Name,
-			User:      c.User,
-			GroupName: c.GroupName,
-			ExpiresAt: TimeAgo(c.ExpiresAt),
+			ServerName: c.ServerName,
+			TargetUser: c.TargetUser,
+			ExpiresAt:  TimeAgo(c.ExpiresAt),
 		})
 	}
 

@@ -25,8 +25,7 @@ import (
 // GrantItem grant item
 type GrantItem struct {
 	ID         uint
-	IsGroup    bool
-	TargetName string
+	ServerName string
 	TargetUser string
 	ExpiresAt  string
 	IsExpired  bool
@@ -43,15 +42,14 @@ func GetGrantsIndex(ctx *web.Context, db *models.DB, fl *session.Flash) {
 		return
 	}
 	ctx.Data["User"] = u
-	gs := make([]models.Grant, 0)
+	gs := []models.Grant{}
 	db.Where("user_id = ?", u.ID).Find(&gs)
 	ti := make([]GrantItem, 0)
 	n := time.Now()
 	for _, g := range gs {
 		ti = append(ti, GrantItem{
 			ID:         g.ID,
-			IsGroup:    g.TargetType == models.GrantTargetGroup,
-			TargetName: g.TargetName,
+			ServerName: g.ServerName,
 			TargetUser: g.TargetUser,
 			ExpiresAt:  TimeAgo(g.ExpiresAt),
 			IsExpired:  (g.ExpiresAt != nil && n.After(*g.ExpiresAt)),
@@ -65,8 +63,7 @@ func GetGrantsIndex(ctx *web.Context, db *models.DB, fl *session.Flash) {
 // GrantCreateForm grant add form
 type GrantCreateForm struct {
 	TargetUser  string `form:"target_user"`
-	TargetType  string `form:"target_type"`
-	TargetName  string `form:"target_name"`
+	ServerName  string `form:"server_name"`
 	ExpiresIn   string `form:"expires_in"`
 	ExpiresUnit string `form:"expires_unit"`
 }
@@ -74,24 +71,15 @@ type GrantCreateForm struct {
 // Validate validate
 func (f GrantCreateForm) Validate() (GrantCreateForm, error) {
 	f.TargetUser = strings.TrimSpace(f.TargetUser)
-	f.TargetName = strings.TrimSpace(f.TargetName)
-	switch f.TargetType {
-	case "1", "2":
-		break
-	default:
-		return f, errors.New("参数错误 target_type")
-	}
+	f.ServerName = strings.TrimSpace(f.ServerName)
 	switch f.ExpiresUnit {
 	case "h", "d", "e":
 		break
 	default:
 		return f, errors.New("参数错误 expires_unit")
 	}
-	if !models.NamePattern.MatchString(f.TargetName) {
-		if f.TargetType == "1" {
-			return f, errors.New("服务器名称不符合规则")
-		}
-		return f, errors.New("服务器组名称不符合规则")
+	if !models.WildcardPattern.MatchString(f.ServerName) {
+		return f, errors.New("服务器名称不符合规则")
 	}
 	if !models.NamePattern.MatchString(f.TargetUser) {
 		return f, errors.New("账户名称不符合规则")
@@ -129,12 +117,10 @@ func PostGrantsCreate(ctx *web.Context, f GrantCreateForm, fl *session.Flash, db
 	}
 
 	_userID, _ := strconv.Atoi(userID)
-	_targetType, _ := strconv.Atoi(f.TargetType)
 
 	if err = db.Where(map[string]interface{}{
 		"user_id":     _userID,
-		"target_type": _targetType,
-		"target_name": f.TargetName,
+		"server_name": f.ServerName,
 		"target_user": f.TargetUser,
 	}).Assign(am).FirstOrCreate(&g).Error; err != nil {
 		fl.Error(err.Error())

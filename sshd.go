@@ -200,10 +200,10 @@ func (s *SSHD) updateSandboxSSHConfig(sb sandbox.Sandbox, account string) (err e
 	se := make([]sandbox.SSHEntry, 0)
 	for _, c := range cg {
 		se = append(se, sandbox.SSHEntry{
-			Name: fmt.Sprintf("%s-%s", c.Name, c.User),
+			Name: fmt.Sprintf("%s-%s", c.ServerName, c.TargetUser),
 			Host: s.Config.Domain,
 			Port: uint(s.Config.SSHD.Port),
-			User: fmt.Sprintf("%s@%s", c.User, c.Name),
+			User: fmt.Sprintf("%s@%s", c.TargetUser, c.ServerName),
 		})
 	}
 	_, _, err = sb.ExecScript(sandbox.ScriptSeedSSHConfig(se))

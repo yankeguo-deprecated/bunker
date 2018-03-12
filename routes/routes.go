@@ -52,7 +52,6 @@ func Mount(w *web.Web) {
 	/* hints */
 	w.Get("/api/hints/users", MustSignedInAsAdmin(), GetUserHints)
 	w.Get("/api/hints/servers", MustSignedInAsAdmin(), GetServerHints)
-	w.Get("/api/hints/groups", MustSignedInAsAdmin(), GetGroupHints)
 	w.Get("/api/hints/target-users", MustSignedInAsAdmin(), GetTargetUserHints)
 }
 

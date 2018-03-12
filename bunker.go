@@ -111,9 +111,8 @@ func (b *Bunker) CreateUser(option CreateUserOption) (err error) {
 
 // CreateServerOption option to create a server
 type CreateServerOption struct {
-	GroupName string
-	Name      string
-	Address   string
+	Name    string
+	Address string
 }
 
 // CreateServer create a server
@@ -122,23 +121,13 @@ func (b *Bunker) CreateServer(option CreateServerOption) (err error) {
 		return
 	}
 	r := &models.Server{
-		GroupName: option.GroupName,
-		Name:      option.Name,
-		Address:   option.Address,
+		Name:    option.Name,
+		Address: option.Address,
 	}
 	if err = b.db.Create(r).Error; err != nil {
 		return
 	}
 	return
-}
-
-// CreateGrantOption option to create a server
-type CreateGrantOption struct {
-	User       string
-	ServerName string
-	GroupName  string
-	TargetUser string
-	ExpiresIn  uint
 }
 
 // Shutdown the internal servers

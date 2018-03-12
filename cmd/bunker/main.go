@@ -83,10 +83,6 @@ var createServerCommand = cli.Command{
 			Name:  "address",
 			Usage: "IP:PORT of server",
 		},
-		cli.StringFlag{
-			Name:  "group",
-			Usage: "name of group",
-		},
 	},
 	Action: func(ctx *cli.Context) (err error) {
 		var b *bunker.Bunker
@@ -94,9 +90,8 @@ var createServerCommand = cli.Command{
 			return
 		}
 		return b.CreateServer(bunker.CreateServerOption{
-			Name:      ctx.String("name"),
-			Address:   ctx.String("address"),
-			GroupName: ctx.String("group"),
+			Name:    ctx.String("name"),
+			Address: ctx.String("address"),
 		})
 	},
 }

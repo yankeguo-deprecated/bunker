@@ -26,12 +26,6 @@ func GetServerHints(ctx *web.Context, db *models.DB) {
 	ctx.JSON(200, map[string]interface{}{"hints": ns})
 }
 
-// GetGroupHints get server group hints
-func GetGroupHints(ctx *web.Context, db *models.DB) {
-	ns := db.GroupHints(ctx.Query("q"))
-	ctx.JSON(200, map[string]interface{}{"hints": ns})
-}
-
 // GetTargetUserHints get target user hints
 func GetTargetUserHints(ctx *web.Context, db *models.DB) {
 	ns := db.TargetUserHints(ctx.Query("q"))
