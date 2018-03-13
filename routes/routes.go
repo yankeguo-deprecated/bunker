@@ -53,6 +53,8 @@ func Mount(w *web.Web) {
 	w.Get("/api/hints/users", MustSignedInAsAdmin(), GetUserHints)
 	w.Get("/api/hints/servers", MustSignedInAsAdmin(), GetServerHints)
 	w.Get("/api/hints/target-users", MustSignedInAsAdmin(), GetTargetUserHints)
+	/* import */
+	w.Post("/api/import/ssh_config", MustSecret(), PostImportSSHConfig)
 }
 
 // GeneralFilter the general filter

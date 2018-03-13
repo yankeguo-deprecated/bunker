@@ -13,6 +13,7 @@ import (
 	"net/http"
 
 	"ireul.com/bunker/models"
+	"ireul.com/bunker/types"
 	"ireul.com/web"
 	"ireul.com/web/session"
 )
@@ -112,5 +113,16 @@ func MustSignedInAsAdmin() web.Handler {
 		} else {
 			ctx.Next()
 		}
+	}
+}
+
+// MustSecret must assign secret
+func MustSecret() web.Handler {
+	return func(ctx *web.Context, cfg types.Config) {
+		if cfg.Secret != ctx.Req.URL.Query().Get("secret") {
+			ctx.PlainText(403, []byte("invalid secret"))
+			return
+		}
+		ctx.Next()
 	}
 }
