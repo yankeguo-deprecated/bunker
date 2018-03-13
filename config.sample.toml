@@ -17,3 +17,5 @@ private_key = "/etc/bunker/id_rsa"
 [sandbox]
 image = "ireul/sandbox"
 datadir = "/var/bunker/sandboxdata"
+[consul]
+enable = false

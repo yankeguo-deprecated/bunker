@@ -19,6 +19,7 @@ type Config struct {
 	SSHD    SSHDConfig    `toml:"sshd"`    // sshd config
 	SSH     SSHConfig     `toml:"ssh"`     // ssh config
 	Sandbox SandboxConfig `toml:"sandbox"` // sandbox config
+	Consul  ConsulConfig  `toml:"consul"`  // consul config
 }
 
 // DBConfig config for DB
@@ -49,4 +50,9 @@ type SSHConfig struct {
 type SandboxConfig struct {
 	Image   string `toml:"image"`
 	DataDir string `toml:"datadir"`
+}
+
+// ConsulConfig consul config
+type ConsulConfig struct {
+	Enable bool `toml:"enable"`
 }

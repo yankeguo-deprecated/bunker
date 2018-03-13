@@ -86,11 +86,15 @@
                                         <td>{{.UpdatedAt}}</td>
                                         <td>{{.UsedAt}}</td>
                                         <td>
+                                            {{if .IsAuto}}
+                                            <span class="label label-default">自动</span>
+                                            {{else}}
                                             <a class="text-success" href="/servers/{{.ID}}/edit">
                                                 <i class="fa fa-edit"></i>&nbsp;编辑</a>
                                             &nbsp;|&nbsp;
                                             <a data-toggle="modal" data-target="#bunker-server-destroy-modal" class="destroy-server text-danger" href="#" data-id="{{.ID}}">
                                                 <i class="fa fa-trash"></i>&nbsp;删除</a>
+                                            {{end}}
                                         </td>
                                     </tr>
                                     {{end}} {{else}}

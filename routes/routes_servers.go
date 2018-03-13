@@ -50,6 +50,7 @@ type ServerItem struct {
 	Address   string
 	CreatedAt string
 	UpdatedAt string
+	IsAuto    bool
 	UsedAt    string
 }
 
@@ -77,6 +78,7 @@ func GetServersIndex(ctx *web.Context, cfg types.Config, db *models.DB, sess ses
 			Address:   s.Address,
 			CreatedAt: TimeAgo(&s.CreatedAt),
 			UpdatedAt: TimeAgo(&s.UpdatedAt),
+			IsAuto:    s.IsAuto,
 			UsedAt:    TimeAgo(s.UsedAt),
 		})
 	}
@@ -149,8 +151,12 @@ func GetServerEdit(ctx *web.Context, db *models.DB, fl *session.Flash) {
 	s := models.Server{}
 	if db.First(&s, ctx.Params(":id")).Error != nil {
 		fl.Error("没有找到目标服务器")
-		ctx.Redirect("/servers")
+		ctx.Redirect(ctx.URLFor("servers"))
 		return
+	}
+	if s.IsAuto {
+		fl.Error("无法编辑自动管理的服务器")
+		ctx.Redirect(ctx.URLFor("servers"))
 	}
 	ctx.Data["Server"] = s
 	ctx.HTML(http.StatusOK, "servers/edit")
@@ -171,19 +177,23 @@ func PostServerUpdate(ctx *web.Context, f ServerCreateForm, fl *session.Flash, d
 		ctx.Redirect(ctx.URLFor("servers"))
 		return
 	}
+	if s.IsAuto {
+		fl.Error("无法编辑自动管理的服务器")
+		ctx.Redirect(ctx.URLFor("servers"))
+	}
 	if err = db.Model(&s).Update(map[string]interface{}{"address": f.Address}).Error; err != nil {
 		fl.Error(err.Error())
 		ctx.Redirect(ctx.URLFor("edit-server", ":id", id))
 		return
 	}
 	fl.Success(fmt.Sprintf("服务器 %s 更新成功", f.Name))
-	ctx.Redirect("/servers")
+	ctx.Redirect(ctx.URLFor("servers"))
 }
 
 // PostServerDestroy post server destroy
 func PostServerDestroy(ctx *web.Context, db *models.DB) {
-	defer ctx.Redirect("/servers")
-	db.Delete(&models.Server{}, ctx.Params(":id"))
+	defer ctx.Redirect(ctx.URLFor("servers"))
+	db.Delete(&models.Server{}, "id = ? AND is_auto = ?", ctx.Params(":id"), false)
 }
 
 // GetMasterKey get master key

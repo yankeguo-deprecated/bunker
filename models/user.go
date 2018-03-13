@@ -18,19 +18,15 @@ import (
 // User user model
 type User struct {
 	Model
-	Account        string     `orm:"not null;unique_index" json:"account"` // account name
-	Nickname       string     `orm:"" json:"nickname"`                     // nickname of user
-	PasswordDigest string     `orm:"not null;type:text" json:"-"`          // digest of password
-	IsAdmin        bool       `orm:"not null" json:"isAdmin"`              // is this user system admin
-	IsBlocked      bool       `orm:"not null" json:"isBlocked"`            // is this user blocked
-	UsedAt         *time.Time `orm:"" json:"usedAt"`                       // last seen at
+	Account        string     `orm:"not null;unique_index" json:"account"`      // account name
+	PasswordDigest string     `orm:"not null;type:text" json:"-"`               // digest of password
+	IsAdmin        bool       `orm:"not null;default:'false'" json:"isAdmin"`   // is this user system admin
+	IsBlocked      bool       `orm:"not null;default:'false'" json:"isBlocked"` // is this user blocked
+	UsedAt         *time.Time `orm:"" json:"usedAt"`                            // last seen at
 }
 
 // BeforeSave before save callback
 func (u *User) BeforeSave() (err error) {
-	if len(u.Nickname) == 0 {
-		u.Nickname = u.Account
-	}
 	if !NamePattern.MatchString(u.Account) {
 		err = errors.New(`invalid field user.account, allows 3~15 letters, numbers, "_" or "-"`)
 	}

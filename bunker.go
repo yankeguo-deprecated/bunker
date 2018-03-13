@@ -25,6 +25,7 @@ type Bunker struct {
 	Config types.Config
 	http   *HTTP
 	sshd   *SSHD
+	auto   *Auto
 	db     *models.DB
 }
 
@@ -50,13 +51,17 @@ func (b *Bunker) ListenAndServe() (err error) {
 	if b.sshd == nil {
 		b.sshd = NewSSHD(b.Config)
 	}
+	if b.auto == nil {
+		b.auto = NewAuto(b.Config)
+	}
 	if err = b.ensureDB(); err != nil {
 		return
 	}
 	// share the same *models.DB
 	b.http.db = b.db
 	b.sshd.db = b.db
-	return utils.RunServers(b.http, b.sshd)
+	b.auto.db = b.db
+	return utils.RunServers(b.http, b.sshd, b.auto)
 }
 
 // Migrate the database
@@ -120,11 +125,11 @@ func (b *Bunker) CreateServer(option CreateServerOption) (err error) {
 	if err = b.ensureDB(); err != nil {
 		return
 	}
-	r := &models.Server{
-		Name:    option.Name,
-		Address: option.Address,
-	}
-	if err = b.db.Create(r).Error; err != nil {
+	if err = b.db.Assign(map[string]interface{}{
+		"address": option.Address,
+	}).FirstOrCreate(&models.Server{}, map[string]interface{}{
+		"name": option.Name,
+	}).Error; err != nil {
 		return
 	}
 	return
