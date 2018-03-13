@@ -67,7 +67,7 @@ func GetServersIndex(ctx *web.Context, cfg types.Config, db *models.DB, sess ses
 	ctx.Data["SideClass_Index"] = "active"
 
 	ss := []models.Server{}
-	db.Find(&ss)
+	db.Order("name ASC").Find(&ss)
 
 	items := []ServerItem{}
 
