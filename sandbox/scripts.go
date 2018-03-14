@@ -47,11 +47,16 @@ const tplSSHConfig = `#!/bin/bash
 rm -f /root/.ssh/config
 
 # create new .ssh/config
+{{if .Entries}}
 {{range .Entries}}
 echo "Host {{.Name}}" >> /root/.ssh/config
-echo "  HostName {{.Host}}" >> /root/.ssh/config
-echo "  Port {{.Port}}" >> /root/.ssh/config
-echo "  User {{.User}}" >> /root/.ssh/config
+echo "HostName {{.Host}}" >> /root/.ssh/config
+echo "Port {{.Port}}" >> /root/.ssh/config
+echo "User {{.User}}" >> /root/.ssh/config
+echo "" >> /root/.ssh/config
+{{end}}
+{{else}}
+echo "" > /root/.ssh/config
 {{end}}
 `
 

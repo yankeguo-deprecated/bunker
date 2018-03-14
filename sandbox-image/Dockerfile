@@ -15,6 +15,7 @@ RUN apt-get update &&\
 WORKDIR /root
 
 ADD dummy-init.c /tmp
+ADD etc/bash_completion.d/bunker_ssh_config /etc/bash_completion.d
 
 RUN gcc /tmp/dummy-init.c -O3 -s -DNDEBUG -o /usr/bin/dummy-init
 
