@@ -48,9 +48,9 @@ func sshdDecodeTargetServer(input string) (user string, host string) {
 
 func sshdModifyCommand(user string, input string) string {
 	if len(input) > 0 {
-		return shellquote.Join("sudo", "-n", "-u", user, "-i", "--", "bash", "-c", input)
+		return shellquote.Join("sudo", "-S", "-n", "-u", user, "-i", "--", "bash", "-c", input)
 	}
-	return shellquote.Join("sudo", "-n", "-u", user, "-i")
+	return shellquote.Join("sudo", "-S", "-n", "-u", user, "-i")
 }
 
 // SSHD sshd instance
