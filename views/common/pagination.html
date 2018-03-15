@@ -1,0 +1,17 @@
+<!--
+ Copyright (c) 2018 Yanke Guo <guoyk.cn@gmail.com>
+ 
+ This software is released under the MIT License.
+ https://opensource.org/licenses/MIT
+-->
+{{if .Pages}}
+<nav class="text-center">
+    <ul class="pagination pagination-sm">
+        {{range .Pages}}
+        <li class="{{if .IsCurrent}}active{{end}} {{if .IsDisabled}}disabled{{end}}">
+            <a href="{{.URL}}">{{.Title}}</a>
+        </li>
+        {{end}}
+    </ul>
+</nav>
+{{end}}

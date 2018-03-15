@@ -25,6 +25,9 @@ import (
 // SSHForwarderPtyCallback pty is detected
 type SSHForwarderPtyCallback func()
 
+// SSHForwarderDoneCallback pty is detected
+type SSHForwarderDoneCallback func()
+
 // SSHConfigEntry ssh config entry
 type SSHConfigEntry struct {
 	Name    string
@@ -199,6 +202,7 @@ type SSHForwarder struct {
 	tuser string
 	rw    ReplayWriter
 	pcb   SSHForwarderPtyCallback
+	dcb   SSHForwarderDoneCallback
 }
 
 // NewSSHForwarder new ssh forwarder
@@ -216,6 +220,12 @@ func NewSSHForwarder(schn ssh.Channel, sreq <-chan *ssh.Request, tchn ssh.Channe
 // SetPtyCallback set pty callback
 func (f *SSHForwarder) SetPtyCallback(pcb SSHForwarderPtyCallback) *SSHForwarder {
 	f.pcb = pcb
+	return f
+}
+
+// SetDoneCallback set pty callback
+func (f *SSHForwarder) SetDoneCallback(dcb SSHForwarderDoneCallback) *SSHForwarder {
+	f.dcb = dcb
 	return f
 }
 
@@ -240,6 +250,10 @@ func (f *SSHForwarder) ForwardTarget(gwg *sync.WaitGroup) {
 	f.schn.Close()
 	// close replay writer
 	f.rw.Close()
+	// call done callback
+	if f.dcb != nil {
+		go f.dcb()
+	}
 }
 
 // ForwardSource forward source connection to target connection

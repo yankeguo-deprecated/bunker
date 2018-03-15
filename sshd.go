@@ -16,6 +16,7 @@ import (
 	"net"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"golang.org/x/crypto/ssh"
 	"ireul.com/bunker/models"
@@ -100,6 +101,7 @@ func (s *SSHD) createPublicKeyCallback() func(ssh.ConnMetadata, ssh.PublicKey) (
 		s.db.Touch(&r)
 		return &ssh.Permissions{
 			Extensions: map[string]string{
+				sshdBunkerUserAccount:   u.Account,
 				sshdBunkerTargetUser:    tu,
 				sshdBunkerTargetServer:  r.Name,
 				sshdBunkerTargetAddress: r.Address,
@@ -302,6 +304,8 @@ func (s *SSHD) handleRawConn(c net.Conn) {
 			utils.NewReplayWriter(filepath.Join(s.Config.SSHD.ReplayDir, sess.ReplayFile)),
 		).SetPtyCallback(func() {
 			s.db.Model(sess).Update(map[string]interface{}{"is_recorded": true})
+		}).SetDoneCallback(func() {
+			s.db.Model(sess).Update(map[string]interface{}{"ended_at": time.Now()})
 		}).Start(wg)
 	}
 	wg.Wait()

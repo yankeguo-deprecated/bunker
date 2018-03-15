@@ -1,0 +1,87 @@
+<!--
+ Copyright (c) 2018 Yanke Guo <guoyk.cn@gmail.com>
+ 
+ This software is released under the MIT License.
+ https://opensource.org/licenses/MIT
+-->
+
+<!--
+ Copyright (c) 2018 Yanke Guo <guoyk.cn@gmail.com>
+ 
+ This software is released under the MIT License.
+ https://opensource.org/licenses/MIT
+-->
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    {{ template "common/head" }}
+    <title>Bunker - 操作记录</title>
+</head>
+
+<body>
+    {{ template "common/navbar" .}}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 col-md-offset-4">
+                {{template "common/flash-alert" .}}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <h4>操作记录</h4>
+                <hr/>
+            </div>
+            <div class="col-md-12">
+                {{template "common/pagination" .Pagination}}
+            </div>
+            <div class="col-md-12">
+                <div class="panel panel-default">
+                    <table class="table table-striped">
+                        {{if .Sessions}}
+                        <thead>
+                            <tr>
+                                <td>ID</td>
+                                <td>用户</td>
+                                <td>目标</td>
+                                <td>开始时间</td>
+                                <td>结束时间</td>
+                                <td></td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{range .Sessions}}
+                            <tr>
+                                <td>{{.ID}}</td>
+                                <td>{{.User}}</td>
+                                <td>
+                                    <code>{{.TargetUser}}@{{.TargetServer}}</code>
+                                </td>
+                                <td>{{.StartedAt}}</td>
+                                <td>{{.EndedAt}}</td>
+                                <td>
+                                    {{if .IsRecorded}}
+                                    <a target="_blank" href="/sessions/{{.ID}}/replay">播放 >></a>
+                                    {{end}}
+                                </td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                        {{else}}
+                        <tr>
+                            <td class="text-muted">没有记录</td>
+                        </tr>
+                        {{end}}
+                    </table>
+                </div>
+            </div>
+            <div class="col-md-12">
+                {{template "common/pagination" .Pagination}}
+            </div>
+        </div>
+    </div>
+    {{ template "common/foot" }}
+</body>
+
+</html>

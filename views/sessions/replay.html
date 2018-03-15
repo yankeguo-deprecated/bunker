@@ -11,7 +11,7 @@
 <head>
     {{ template "common/head" }}
     <title>Bunker - 操作回放</title>
-    <meta name="session-id" content="{{.SessionID}}" />
+    <meta name="session-id" content="{{.Session.ID}}" />
     <link href="https://cdn.bootcss.com/xterm/2.9.2/xterm.min.css" rel="stylesheet" crossorigin="anonymous" />
     <style>
         div#xterm {
@@ -19,17 +19,35 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            right: 0;
+            bottom: 0;
         }
 
         body {
-            background-color: black;
+            background-color: #333333;
         }
     </style>
 </head>
 
 <body>
+    <nav class="navbar navbar-default navbar-fixed-top">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1"
+                    aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="/">{{.Config.Title}}</a>
+                <p class="navbar-text">操作回放</p>
+                <p class="navbar-text">
+                    {{.Session.UserAccount}} -> {{.Session.TargetUser}}@{{.Session.TargetServer}}，{{.Session_StartedAt}}
+                </p>
+            </div>
+        </div>
+    </nav>
     <div id="xterm"></div>
     {{ template "common/foot" }}
     <script src="https://cdn.bootcss.com/xterm/2.9.2/xterm.min.js" crossorigin="anonymous"></script>

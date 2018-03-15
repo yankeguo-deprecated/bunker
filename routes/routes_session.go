@@ -10,11 +10,62 @@ package routes
 
 import (
 	"path/filepath"
+	"strconv"
 
 	"ireul.com/bunker/models"
 	"ireul.com/bunker/types"
 	"ireul.com/web"
+	"ireul.com/web/session"
 )
+
+// SessionItem session item
+type SessionItem struct {
+	ID           uint
+	User         string
+	StartedAt    string
+	EndedAt      string
+	TargetUser   string
+	TargetServer string
+	IsRecorded   bool
+}
+
+// SessionsPerPage sessions per page
+const SessionsPerPage = 50
+
+// GetSessionsIndex get sessions index
+func GetSessionsIndex(ctx *web.Context, db *models.DB, cfg types.Config) {
+	ctx.Data["NavClass_Sessions"] = "active"
+	var err error
+	// calculate page 0 based
+	var page int
+	if page, err = strconv.Atoi(ctx.Query("page")); err != nil || page < 1 {
+		page = 0
+	} else {
+		page = page - 1
+	}
+	// total count
+	var count int
+	db.Model(&models.Session{}).Count(&count)
+	// create pagination
+	ctx.Data["Pagination"] = CreatePagination(count, SessionsPerPage, page, ctx.URLFor("sessions"))
+	// data
+	ss := []models.Session{}
+	db.Model(&models.Session{}).Order("id DESC").Offset(page * SessionsPerPage).Limit(SessionsPerPage).Find(&ss)
+	out := []SessionItem{}
+	for _, s := range ss {
+		out = append(out, SessionItem{
+			ID:           s.ID,
+			User:         s.UserAccount,
+			StartedAt:    PrettyTime(&s.StartedAt),
+			EndedAt:      PrettyTime(s.EndedAt),
+			TargetUser:   s.TargetUser,
+			TargetServer: s.TargetServer,
+			IsRecorded:   s.IsRecorded,
+		})
+	}
+	ctx.Data["Sessions"] = out
+	ctx.HTML(200, "sessions/index")
+}
 
 // GetSessionFile get sessions replay
 func GetSessionFile(ctx *web.Context, db *models.DB, cfg types.Config) {
@@ -29,7 +80,15 @@ func GetSessionFile(ctx *web.Context, db *models.DB, cfg types.Config) {
 }
 
 // GetSessionReplay get sessions replay
-func GetSessionReplay(ctx *web.Context, db *models.DB) {
-	ctx.Data["SessionID"] = ctx.Params(":id")
+func GetSessionReplay(ctx *web.Context, db *models.DB, fl *session.Flash) {
+	var err error
+	s := models.Session{}
+	if err = db.First(&s, ctx.Params(":id")).Error; err != nil {
+		fl.Error("没有找到操作记录")
+		ctx.Redirect(ctx.URLFor("sessions"))
+		return
+	}
+	ctx.Data["Session"] = s
+	ctx.Data["Session_StartedAt"] = PrettyTime(&s.StartedAt)
 	ctx.HTML(200, "sessions/replay")
 }
