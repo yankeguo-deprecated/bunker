@@ -55,6 +55,9 @@ func Mount(w *web.Web) {
 	w.Get("/api/hints/target-users", MustSignedInAsAdmin(), GetTargetUserHints)
 	/* import */
 	w.Post("/api/import/ssh_config", MustSecret(), PostImportSSHConfig)
+	/* sessions */
+	w.Get("/sessions/:id/file", MustSignedInAsAdmin(), GetSessionFile).Name("session-file")
+	w.Get("/sessions/:id/replay", MustSignedInAsAdmin(), GetSessionReplay).Name("session-replay")
 }
 
 // GeneralFilter the general filter

@@ -9,26 +9,26 @@
 package bunker
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
-	"strings"
+	"path/filepath"
 	"sync"
 
 	"golang.org/x/crypto/ssh"
 	"ireul.com/bunker/models"
 	"ireul.com/bunker/sandbox"
 	"ireul.com/bunker/types"
-	"ireul.com/shellquote"
+	"ireul.com/bunker/utils"
 )
 
 const (
 	sshdBunkerUserAccount   = "bunker-user-account"
 	sshdBunkerSandboxMode   = "bunker-sandbox-mode"
 	sshdBunkerTargetUser    = "bunker-target-user"
+	sshdBunkerTargetServer  = "bunker-target-server"
 	sshdBunkerTargetAddress = "bunker-target-address"
 )
 
@@ -36,22 +36,6 @@ var (
 	// ErrSSHDAlreadyRunning SSHD instance is already running
 	ErrSSHDAlreadyRunning = errors.New("sshd is already running")
 )
-
-func sshdDecodeTargetServer(input string) (user string, host string) {
-	ds := strings.Split(input, "@")
-	if len(ds) == 2 {
-		user = ds[0]
-		host = ds[1]
-	}
-	return
-}
-
-func sshdModifyCommand(user string, input string) string {
-	if len(input) > 0 {
-		return shellquote.Join("sudo", "-S", "-n", "-u", user, "-i", "--", "bash", "-c", input)
-	}
-	return shellquote.Join("sudo", "-S", "-n", "-u", user, "-i")
-}
 
 // SSHD sshd instance
 type SSHD struct {
@@ -79,7 +63,7 @@ func (s *SSHD) createPublicKeyCallback() func(ssh.ConnMetadata, ssh.PublicKey) (
 	return func(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error) {
 		var err error
 		// fetch target information
-		tu, th := sshdDecodeTargetServer(conn.User())
+		tu, th := utils.SSHDDecodeTargetServer(conn.User())
 		// find Key
 		k := models.Key{}
 		fp := ssh.FingerprintSHA256(key)
@@ -117,6 +101,7 @@ func (s *SSHD) createPublicKeyCallback() func(ssh.ConnMetadata, ssh.PublicKey) (
 		return &ssh.Permissions{
 			Extensions: map[string]string{
 				sshdBunkerTargetUser:    tu,
+				sshdBunkerTargetServer:  r.Name,
 				sshdBunkerTargetAddress: r.Address,
 			},
 		}, nil
@@ -226,6 +211,7 @@ func (s *SSHD) handleRawConn(c net.Conn) {
 	var userAccount = sconn.Permissions.Extensions[sshdBunkerUserAccount]
 	var targetUser = sconn.Permissions.Extensions[sshdBunkerTargetUser]
 	var sandboxMode = sconn.Permissions.Extensions[sshdBunkerSandboxMode]
+	var targetServer = sconn.Permissions.Extensions[sshdBunkerTargetServer]
 	var targetAddress = sconn.Permissions.Extensions[sshdBunkerTargetAddress]
 	// $SANDBOX SUPPORT$
 	if len(sandboxMode) > 0 {
@@ -255,7 +241,7 @@ func (s *SSHD) handleRawConn(c net.Conn) {
 				continue
 			}
 			// forward
-			sshForwardSandbox(sb, schn, sreq, wg)
+			utils.NewSandboxForwarder(sb, schn, sreq).Start(wg)
 		}
 		wg.Wait()
 		return
@@ -294,12 +280,29 @@ func (s *SSHD) handleRawConn(c net.Conn) {
 			nchn.Reject(jerr.Reason, jerr.Message)
 			continue
 		}
+
+		var sess *models.Session
+		if sess, err = s.db.CreateSession(userAccount, targetUser, targetServer); err != nil {
+			tchn.Close()
+			continue
+		}
+
 		if schn, sreq, err = nchn.Accept(); err != nil {
 			tchn.Close()
 			continue
 		}
+
 		// forward ssh channel
-		sshForwardChannel(schn, sreq, tchn, treq, targetUser, wg)
+		utils.NewSSHForwarder(
+			schn,
+			sreq,
+			tchn,
+			treq,
+			targetUser,
+			utils.NewReplayWriter(filepath.Join(s.Config.SSHD.ReplayDir, sess.ReplayFile)),
+		).SetPtyCallback(func() {
+			s.db.Model(sess).Update(map[string]interface{}{"is_recorded": true})
+		}).Start(wg)
 	}
 	wg.Wait()
 }
@@ -310,295 +313,4 @@ func (s *SSHD) Shutdown() (err error) {
 		return s.listener.Close()
 	}
 	return
-}
-
-type sandboxForwarder struct {
-	schn      ssh.Channel
-	sreq      <-chan *ssh.Request
-	sb        sandbox.Sandbox
-	env       []string
-	cmd       []string
-	pty       *sandbox.Pty
-	isHandled bool
-	wch       chan sandbox.Window
-}
-
-func (f *sandboxForwarder) forward(gwg *sync.WaitGroup) {
-	defer gwg.Done()
-	for req := range f.sreq {
-		switch req.Type {
-		case "shell", "exec":
-			{
-				// already handled
-				if f.isHandled {
-					req.Reply(false, nil)
-					continue
-				}
-				f.isHandled = true
-				req.Reply(true, nil)
-				// extract command
-				var pl struct{ Value string }
-				ssh.Unmarshal(req.Payload, &pl)
-				f.cmd, _ = shellquote.Split(pl.Value)
-				// handle
-				go f.handle()
-			}
-		case "env":
-			{
-				// already handled
-				if f.isHandled {
-					req.Reply(false, nil)
-					continue
-				}
-				// append env
-				var kv struct{ Key, Value string }
-				ssh.Unmarshal(req.Payload, &kv)
-				if f.env == nil {
-					f.env = make([]string, 0)
-				}
-				f.env = append(f.env, fmt.Sprintf("%s=%s", kv.Key, kv.Value))
-				req.Reply(true, nil)
-			}
-		case "pty-req":
-			{
-				if f.isHandled || f.pty != nil {
-					req.Reply(false, nil)
-					continue
-				}
-				pty, ok := ParsePtyRequest(req.Payload)
-				if !ok {
-					req.Reply(false, nil)
-					continue
-				}
-				f.pty = &pty
-				f.wch = make(chan sandbox.Window, 1)
-				f.wch <- pty.Window
-				defer close(f.wch)
-				req.Reply(true, nil)
-			}
-		case "window-change":
-			{
-				if f.pty == nil {
-					req.Reply(false, nil)
-					continue
-				}
-				w, ok := ParseWchanRequest(req.Payload)
-				if !ok {
-					req.Reply(false, nil)
-					continue
-				}
-				f.pty.Window = w
-				f.wch <- w
-				req.Reply(true, nil)
-			}
-		default:
-			req.Reply(false, nil)
-		}
-	}
-}
-
-func (f *sandboxForwarder) handle() {
-	var opts = sandbox.ExecAttachOptions{
-		Env:     f.env,
-		Command: f.cmd,
-		Stdin:   f.schn,
-		Stdout:  f.schn,
-		Stderr:  f.schn.Stderr(),
-	}
-	if f.pty != nil {
-		opts.IsPty = true
-		opts.Term = f.pty.Term
-		opts.WindowChan = f.wch
-	}
-	pl := make([]byte, 4)
-	if err := f.sb.ExecAttach(opts); err != nil {
-		binary.BigEndian.PutUint32(pl, 1)
-	}
-	f.schn.SendRequest("exit-status", false, pl)
-	f.schn.Close()
-}
-
-func sshForwardSandbox(sb sandbox.Sandbox, schn ssh.Channel, sreq <-chan *ssh.Request, gwg *sync.WaitGroup) {
-	gwg.Add(1)
-	f := &sandboxForwarder{
-		schn: schn,
-		sreq: sreq,
-		sb:   sb,
-	}
-	go f.forward(gwg)
-}
-
-type sshForwarder struct {
-	schn  ssh.Channel
-	sreq  <-chan *ssh.Request
-	tchn  ssh.Channel
-	treq  <-chan *ssh.Request
-	tuser string
-}
-
-func sshForwardChannel(schn ssh.Channel, sreq <-chan *ssh.Request, tchn ssh.Channel, treq <-chan *ssh.Request, tuser string, gwg *sync.WaitGroup) {
-	gwg.Add(2)
-	f := &sshForwarder{
-		schn:  schn,
-		sreq:  sreq,
-		tchn:  tchn,
-		treq:  treq,
-		tuser: tuser,
-	}
-	go f.forwardTarget(gwg)
-	go f.forwardSource(gwg)
-}
-
-func (f *sshForwarder) forwardTarget(gwg *sync.WaitGroup) {
-	defer gwg.Done()
-	// ensure stdout, stderr and target chan *ssh.Request are all finished
-	wg := &sync.WaitGroup{}
-	wg.Add(3)
-	go f.forwardStdout(wg)
-	go f.forwardStderr(wg)
-	go f.forwardTargetRequests(wg)
-	wg.Wait()
-	// close source channel, because target channel is totally finished
-	f.schn.Close()
-}
-
-func (f *sshForwarder) forwardSource(gwg *sync.WaitGroup) {
-	defer gwg.Done()
-	// ensure stdin, source chan *ssh.Request are all finished
-	wg := &sync.WaitGroup{}
-	wg.Add(2)
-	go f.forwardStdin(wg)
-	go f.forwardSourceRequests(wg)
-	wg.Wait()
-	// close target channel, because source channel is totally finished
-	f.tchn.Close()
-}
-
-func (f *sshForwarder) forwardSourceRequests(wg *sync.WaitGroup) {
-	defer wg.Done()
-	for req := range f.sreq {
-		// transform exec, shell request with targetUser
-		switch req.Type {
-		case "exec":
-			// transform "exec" with sudo prefix
-			var pl = struct{ Value string }{}
-			ssh.Unmarshal(req.Payload, &pl)
-			pl.Value = sshdModifyCommand(f.tuser, pl.Value)
-			req.Payload = ssh.Marshal(&pl)
-		case "shell":
-			// transform "shell" to "exec" with sudo prefix
-			var pl = struct{ Value string }{
-				Value: sshdModifyCommand(f.tuser, ""),
-			}
-			req.Type = "exec"
-			req.Payload = ssh.Marshal(&pl)
-		}
-		// ban "x11-req", "subsystem", "env" requests, cause they may escape from sudo
-		switch req.Type {
-		case "x11-req", "subsystem", "env":
-			req.Reply(false, nil)
-		default:
-			ok, _ := f.tchn.SendRequest(req.Type, req.WantReply, req.Payload)
-			req.Reply(ok, nil)
-		}
-	}
-}
-
-func (f *sshForwarder) forwardTargetRequests(wg *sync.WaitGroup) {
-	defer wg.Done()
-	for req := range f.treq {
-		ok, _ := f.schn.SendRequest(req.Type, req.WantReply, req.Payload)
-		req.Reply(ok, nil)
-	}
-}
-
-func (f *sshForwarder) forwardStdin(wg *sync.WaitGroup) {
-	defer wg.Done()
-	io.Copy(f.tchn, f.schn)
-	f.tchn.CloseWrite()
-}
-
-func (f *sshForwarder) forwardStdout(wg *sync.WaitGroup) {
-	defer wg.Done()
-	io.Copy(f.schn, f.tchn)
-	f.schn.CloseWrite()
-}
-
-func (f *sshForwarder) forwardStderr(wg *sync.WaitGroup) {
-	defer wg.Done()
-	io.Copy(f.schn.Stderr(), f.tchn.Stderr())
-}
-
-// ParseWchanRequest parse window change request
-func ParseWchanRequest(s []byte) (win sandbox.Window, ok bool) {
-	width32, s, ok := parseUint32(s)
-	if width32 < 1 {
-		ok = false
-	}
-	if !ok {
-		return
-	}
-	height32, _, ok := parseUint32(s)
-	if height32 < 1 {
-		ok = false
-	}
-	if !ok {
-		return
-	}
-	win = sandbox.Window{
-		Width:  uint(width32),
-		Height: uint(height32),
-	}
-	return
-}
-
-// ParsePtyRequest parse pty request
-func ParsePtyRequest(s []byte) (pty sandbox.Pty, ok bool) {
-	term, s, ok := parseString(s)
-	if !ok {
-		return
-	}
-	width32, s, ok := parseUint32(s)
-	if width32 < 1 {
-		ok = false
-	}
-	if !ok {
-		return
-	}
-	height32, _, ok := parseUint32(s)
-	if height32 < 1 {
-		ok = false
-	}
-	if !ok {
-		return
-	}
-	pty = sandbox.Pty{
-		Term: term,
-		Window: sandbox.Window{
-			Width:  uint(width32),
-			Height: uint(height32),
-		},
-	}
-	return
-}
-
-func parseString(in []byte) (out string, rest []byte, ok bool) {
-	if len(in) < 4 {
-		return
-	}
-	length := binary.BigEndian.Uint32(in)
-	if uint32(len(in)) < 4+length {
-		return
-	}
-	out = string(in[4 : 4+length])
-	rest = in[4+length:]
-	ok = true
-	return
-}
-
-func parseUint32(in []byte) (uint32, []byte, bool) {
-	if len(in) < 4 {
-		return 0, nil, false
-	}
-	return binary.BigEndian.Uint32(in), in[4:], true
 }

@@ -1,0 +1,151 @@
+<!--
+ Copyright (c) 2018 Yanke Guo <guoyk.cn@gmail.com>
+ 
+ This software is released under the MIT License.
+ https://opensource.org/licenses/MIT
+-->
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    {{ template "common/head" }}
+    <title>Bunker - 操作回放</title>
+    <meta name="session-id" content="{{.SessionID}}" />
+    <link href="https://cdn.bootcss.com/xterm/2.9.2/xterm.min.css" rel="stylesheet" crossorigin="anonymous" />
+    <style>
+        div#xterm {
+            background-color: black;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            background-color: black;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="xterm"></div>
+    {{ template "common/foot" }}
+    <script src="https://cdn.bootcss.com/xterm/2.9.2/xterm.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.bootcss.com/pako/1.0.6/pako_inflate.min.js" crossorigin="anonymous"></script>
+    <script>
+        function decodeUint32(b1, b2, b3, b4) {
+            return (b1 << 24) + (b2 << 16) + (b3 << 8) + b4
+        }
+
+        function play(ctx, term, data) {
+            playFrame(ctx, term, data)
+            ctx.itv = setInterval(function () {
+                playFrame(ctx, term, data)
+            }, 100)
+        }
+
+        function playFrame(ctx, term, data) {
+            // interval counter
+            if (!ctx.i) ctx.i = 0
+            // timestamp cursor
+            ctx.t = ctx.i * 100
+            // data index cursor
+            if (!ctx.idx) ctx.idx = 0
+            // check oob
+            if (ctx.idx >= data.length) {
+                if (ctx.itv) {
+                    clearInterval(ctx.itv)
+                }
+                ctx.i = 0
+                ctx.idx = 0
+                ctx.t = 0
+                return
+            }
+            // decode data frame
+            for (; ;) {
+                var idx = ctx.idx
+                if (idx >= data.length) {
+                    break
+                }
+                // check time
+                var ts = decodeUint32(data[idx], data[idx + 1], data[idx + 2], data[idx + 3])
+                if (ts > ctx.t) {
+                    break
+                }
+                // handle data frame
+                var typ = data[idx + 4]
+                switch (typ) {
+                    case 1:
+                    case 2: {
+                        var len = decodeUint32(data[idx + 5], data[idx + 6], data[idx + 7], data[idx + 8])
+                        var payload = new TextDecoder("utf-8").decode(ctx.raw.slice(idx + 9, idx + 9 + len))
+                        term.write(payload)
+                        idx += (9 + len)
+                        break
+                    }
+                    case 3: {
+                        var w = decodeUint32(data[idx + 5], data[idx + 6], data[idx + 7], data[idx + 8])
+                        var h = decodeUint32(data[idx + 9], data[idx + 10], data[idx + 11], data[idx + 12])
+                        term.resize(w, h)
+                        idx += 13
+                        break
+                    }
+                    default: {
+                        term.write("发现未知的回放文件帧类型: " + typ + "\r\n")
+                        return
+                    }
+                }
+                // update idx
+                ctx.idx = idx
+            }
+            // update interval counter
+            ctx.i++
+        }
+
+        $(window).ready(function () {
+            // get session id
+            var sessionId = $('meta[name="session-id"]').attr('content')
+            // build term
+            var term = new Terminal({
+                cursorBlink: false,
+                scrollBack: 1000000
+            });
+            term.open(document.getElementById('session-id'), true);
+            term.write("正在下载...\r\n")
+            // download session replay file
+            $.ajax({
+                url: '/sessions/' + sessionId + "/file",
+                xhrFields: {
+                    responseType: 'arraybuffer'
+                },
+                success: function (data, status, xhr) {
+                    term.write("下载成功 !\r\n")
+                    term.write("\r\n")
+                    term.write("正在解压...\r\n")
+                    var raw
+
+                    try {
+                        raw = pako.inflate(new Uint8Array(data))
+                    } catch (e) {
+                        term.write("解压失败: " + e + " \r\n")
+                        return
+                    }
+                    term.write("解压成功 !\r\n")
+                    term.write("\r\n")
+                    term.write("准备播放...\r\n")
+                    setTimeout(() => {
+                        term.clear()
+                        play({ raw: raw }, term, raw)
+                    }, 3000);
+                },
+                error: function (xhr, status, err) {
+                    term.write("无法下载回放文件: " + err + "\r\n")
+                }
+            })
+        })
+    </script>
+</body>
+
+</html>

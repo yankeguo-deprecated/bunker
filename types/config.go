@@ -39,6 +39,7 @@ type SSHDConfig struct {
 	Host       string `toml:"host"`        // host for sshd
 	Port       int    `toml:"port"`        // port for sshd
 	PrivateKey string `toml:"private_key"` // private key file, for sshd host key
+	ReplayDir  string `toml:"replay_dir"`  // dir for replayfiles
 }
 
 // SSHConfig config for ssh

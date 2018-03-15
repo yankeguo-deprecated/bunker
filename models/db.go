@@ -57,6 +57,7 @@ func (w *DB) AutoMigrate() error {
 		User{},
 		Key{},
 		Grant{},
+		Session{},
 	).Error
 }
 
@@ -192,6 +193,25 @@ func (w *DB) UpdateSandboxPublicKeyForAccount(fp string, account string) (err er
 	}).FirstOrCreate(&k, map[string]interface{}{
 		"user_id":    u.ID,
 		"is_sandbox": true,
+	}).Error; err != nil {
+		return
+	}
+	return
+}
+
+// CreateSession create a new session model
+func (w *DB) CreateSession(account, tuser, tserver string) (s *Session, err error) {
+	s = &Session{
+		UserAccount:  account,
+		TargetUser:   tuser,
+		TargetServer: tserver,
+		StartedAt:    time.Now(),
+	}
+	if err = w.Create(s).Error; err != nil {
+		return
+	}
+	if err = w.Model(s).Update(map[string]interface{}{
+		"replay_file": s.GenerateReplayFile(),
 	}).Error; err != nil {
 		return
 	}
