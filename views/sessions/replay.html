@@ -17,7 +17,8 @@
         div#xterm {
             background-color: black;
             position: absolute;
-            top: 0;
+            padding: 4px;
+            top: 60px;
             left: 0;
             right: 0;
             bottom: 0;
@@ -40,10 +41,17 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand" href="/">{{.Config.Title}}</a>
-                <p class="navbar-text">操作回放</p>
+                <a class="navbar-brand" href="/">{{.Config.Title}}&nbsp;
+                    <small>操作回放</small>
+                </a>
                 <p class="navbar-text">
-                    {{.Session.UserAccount}} -> {{.Session.TargetUser}}@{{.Session.TargetServer}}，{{.Session_StartedAt}}
+                    用户:&nbsp;{{.Session.UserAccount}}
+                </p>
+                <p class="navbar-text">
+                    目标:&nbsp;{{.Session.TargetUser}}@{{.Session.TargetServer}}
+                </p>
+                <p class="navbar-text">
+                    时间:&nbsp;{{.Session_StartedAt}}
                 </p>
             </div>
         </div>
@@ -139,7 +147,7 @@
                 cursorBlink: false,
                 scrollBack: 1000000
             });
-            term.open(document.getElementById('session-id'), true);
+            term.open(document.getElementById('xterm'), true);
             term.write("正在下载...\r\n")
             // download session replay file
             $.ajax({
