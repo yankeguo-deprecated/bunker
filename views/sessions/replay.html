@@ -21,11 +21,24 @@
             top: 60px;
             left: 0;
             right: 0;
-            bottom: 0;
+            bottom: 60px;
+        }
+
+        div.replay-progress {
+            width: 640px;
+            margin-left: 15px;
+            margin-right: 15px;
+            margin-top: 25px;
+            margin-bottom: 25px;
+        }
+
+        a#play-button {
+            cursor: pointer;
         }
 
         body {
             background-color: #333333;
+            padding-bottom: 70px;
         }
     </style>
 </head>
@@ -57,86 +70,169 @@
         </div>
     </nav>
     <div id="xterm"></div>
+    <nav class="navbar navbar-default navbar-fixed-bottom">
+        <div class="container-fluid">
+            <ul class="nav navbar-nav">
+                <li>
+                    <a id="play-button">
+                        <i class="fa fa-play"></i>
+                    </a>
+                </li>
+                <li>
+                    <div id="replay-progress" class="progress replay-progress">
+                        <div id="replay-progress-bar" class="progress-bar progress-bar-info" style="width: 0%;"></div>
+                    </div>
+                </li>
+                <li>
+                    <p id="time-label" class="navbar-text"></p>
+                </li>
+            </ul>
+        </div>
+    </nav>
     {{ template "common/foot" }}
     <script src="https://cdn.bootcss.com/xterm/2.9.2/xterm.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.bootcss.com/pako/1.0.6/pako_inflate.min.js" crossorigin="anonymous"></script>
     <script>
-        function decodeUint32(array, i) {
-            var b1 = array[i]
-            var b2 = array[i + 1]
-            var b3 = array[i + 2]
-            var b4 = array[i + 3]
-            return (b1 << 24) + (b2 << 16) + (b3 << 8) + b4
+        // decodeUint32 decode 4 bytes to a Uint32, big endian
+        function decodeUint32(a, i) {
+            return (a[i] << 24) + (a[i + 1] << 16) + (a[i + 2] << 8) + a[i + 3]
         }
 
-        function play(ctx, term, data) {
-            playFrame(ctx, term, data)
-            ctx.itv = setInterval(function () {
-                playFrame(ctx, term, data)
+        // fix2 1 -> "01"
+        function fix2(n) {
+            var s = String(n)
+            if (s.length == 1) return "0" + s
+            return s
+        }
+
+        // fix3 1 -> "001", 12 -> "012"
+        function fix3(n) {
+            var s = String(n)
+            if (s.length == 1) return "00" + s
+            if (s.length == 2) return "0" + s
+            return s
+        }
+
+        // prettyTime 12440123 -> "02:04:40.123"
+        function prettyTime(t) {
+            var h = Math.floor(t / (1000 * 60 * 60))
+            t = t - (h * 1000 * 60 * 60)
+            var m = Math.floor(t / (1000 * 60))
+            t = t - (m * 1000 * 60)
+            var s = Math.floor(t / 1000)
+            t = t - (s * 1000)
+            return fix2(h) + ":" + fix2(m) + ":" + fix2(s) + "." + fix3(t)
+        }
+        /*
+         * option:
+         *  playButton: jquery selector for play/pause button
+         *  timeLabel: jquery selector for time label
+         *  replayProgress: jquery for replayProgress
+         *  replayProgressBar: jquery selector for replayProgressBar
+         */
+        var ReplaySession = function (term, data, option) {
+            this.term = term
+            this.data = data
+            this.option = option
+            this.idx = 0 // current index, should always be first byte of next frame
+            this.time = 0 // current time
+            this.total = 0 // total time
+            this.scan()
+            this.updateLabel()
+            var that = this
+            $(option.playButton).click(function () {
+                if (that.itv) {
+                    clearInterval(that.itv)
+                    that.itv = null
+                    $(option.playButton).html('<i class="fa fa-play"></i>')
+                } else {
+                    if (that.time == 0) {
+                        that.term.clear()
+                    }
+                    that.play()
+                    $(option.playButton).html('<i class="fa fa-pause"></i>')
+                }
+            })
+            $(option.replayProgress).click(function (e) {
+                if (that.itv) {
+                    clearInterval(that.itv)
+                    that.itv = null
+                }
+                $(option.playButton).html('<i class="fa fa-play"></i>')
+                that.term.reset()
+                that.idx = 0
+                that.time = 0
+                that.playUntil(Math.floor(that.total * (e.offsetX / 640)))
+            })
+        }
+
+        ReplaySession.prototype.play = function () {
+            this.playUntil(this.time + 100)
+            var that = this
+            this.itv = setInterval(function () {
+                if (that.idx >= that.data.length) {
+                    clearInterval(that.itv)
+                }
+                that.playUntil(that.time + 100)
             }, 100)
         }
 
-        function playFrame(ctx, term, data) {
-            // interval counter
-            if (!ctx.i) ctx.i = 0
-            // timestamp cursor
-            ctx.t = ctx.i * 100
-            // data index cursor
-            if (!ctx.idx) ctx.idx = 0
-            // check oob
-            if (ctx.idx >= data.length) {
-                if (ctx.itv) {
-                    clearInterval(ctx.itv)
-                }
-                ctx.i = 0
-                ctx.idx = 0
-                ctx.t = 0
-                return
+        ReplaySession.prototype.updateLabel = function () {
+            if (this.idx >= this.data.length) {
+                $(this.option.timeLabel).text(prettyTime(this.total) + " / " + prettyTime(this.total))
+                $(this.option.replayProgressBar).attr("style", "width: 100%;")
+            } else {
+                $(this.option.timeLabel).text(prettyTime(this.time) + " / " + prettyTime(this.total))
+                var per = ((this.time / this.total) * 100).toFixed(2)
+                $(this.option.replayProgressBar).attr("style", "width: " + per + "%;")
             }
-            // decode data frame
+        }
+
+        // scan, calculate total time in milliseconds
+        ReplaySession.prototype.scan = function () {
+            var i = 0
+            var ts = 0
             for (; ;) {
-                var idx = ctx.idx
-                if (idx >= data.length) {
-                    break
-                }
-                // check time
-                var ts = decodeUint32(data, idx)
-                if (ts > ctx.t) {
-                    break
-                }
-                // handle data frame
-                var typ = data[idx + 4]
+                if (i >= this.data.length) break
+                ts = decodeUint32(this.data, i)
+                var len = decodeUint32(this.data, i + 5)
+                i += (9 + len)
+            }
+            this.total = ts
+        }
+
+        // playUntil, play frames until target time is reached
+        ReplaySession.prototype.playUntil = function (targetTime) {
+            for (; ;) {
+                if (this.idx >= this.data.length) break
+                var ts = decodeUint32(this.data, this.idx)
+                if (ts > targetTime) break
+                var typ = this.data[this.idx + 4]
+                var len = decodeUint32(this.data, this.idx + 5)
                 switch (typ) {
                     case 1:
                     case 2: {
-                        var len = decodeUint32(data, idx + 5)
-                        var payload = new TextDecoder("utf-8").decode(ctx.raw.slice(idx + 9, idx + 9 + len))
-                        term.write(payload)
-                        idx += (9 + len)
+                        var payload = new TextDecoder("utf-8").decode(this.data.slice(this.idx + 9, this.idx + 9 + len))
+                        this.term.write(payload)
                         break
                     }
                     case 3: {
-                        var len = decodeUint32(data, idx + 5)
                         if (len != 8) {
-                            term.write("窗口尺寸帧结构错误")
-                            return
+                            this.term.write("ERROR: 窗口尺寸帧结构错误\r\n")
                         }
-                        var w = decodeUint32(data, idx + 9)
-                        var h = decodeUint32(data, idx + 13)
-                        term.resize(w, h)
-                        idx += 17
+                        var w = decodeUint32(this.data, this.idx + 9)
+                        var h = decodeUint32(this.data, this.idx + 13)
+                        this.term.resize(w, h)
                         break
                     }
                     default: {
-                        term.write("发现未知的回放文件帧类型: " + typ + "\r\n")
-                        return
+                        this.term.write("ERROR: 未知的帧: " + typ + "\r\n")
                     }
                 }
-                // update idx
-                ctx.idx = idx
+                this.idx += (9 + len)
             }
-            // update interval counter
-            ctx.i++
+            this.time = targetTime
+            this.updateLabel()
         }
 
         $(window).ready(function () {
@@ -159,21 +255,22 @@
                     term.write("下载成功 !\r\n")
                     term.write("\r\n")
                     term.write("正在解压...\r\n")
-                    var raw
-
+                    var inflated
                     try {
-                        raw = pako.inflate(new Uint8Array(data))
+                        inflated = pako.inflate(new Uint8Array(data))
                     } catch (e) {
                         term.write("解压失败: " + e + " \r\n")
                         return
                     }
                     term.write("解压成功 !\r\n")
                     term.write("\r\n")
-                    term.write("准备播放...\r\n")
-                    setTimeout(() => {
-                        term.clear()
-                        play({ raw: raw }, term, raw)
-                    }, 3000);
+                    term.write("[请点击播放]\r\n")
+                    new ReplaySession(term, inflated, {
+                        timeLabel: "#time-label",
+                        playButton: "#play-button",
+                        replayProgress: "#replay-progress",
+                        replayProgressBar: "#replay-progress-bar"
+                    })
                 },
                 error: function (xhr, status, err) {
                     term.write("无法下载回放文件: " + err + "\r\n")
