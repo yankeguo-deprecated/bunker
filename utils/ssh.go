@@ -19,6 +19,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 	"ireul.com/bunker/sandbox"
+	"ireul.com/rec"
 	"ireul.com/shellquote"
 )
 
@@ -200,13 +201,13 @@ type SSHForwarder struct {
 	tchn  ssh.Channel
 	treq  <-chan *ssh.Request
 	tuser string
-	rw    ReplayWriter
+	rw    rec.Writer
 	pcb   SSHForwarderPtyCallback
 	dcb   SSHForwarderDoneCallback
 }
 
 // NewSSHForwarder new ssh forwarder
-func NewSSHForwarder(schn ssh.Channel, sreq <-chan *ssh.Request, tchn ssh.Channel, treq <-chan *ssh.Request, tuser string, rw ReplayWriter) *SSHForwarder {
+func NewSSHForwarder(schn ssh.Channel, sreq <-chan *ssh.Request, tchn ssh.Channel, treq <-chan *ssh.Request, tuser string, rw rec.Writer) *SSHForwarder {
 	return &SSHForwarder{
 		schn:  schn,
 		sreq:  sreq,
@@ -302,7 +303,7 @@ func (f *SSHForwarder) forwardSourceRequests(wg *sync.WaitGroup) {
 			f.rw.Activate()
 			w, ok := ParsePtyRequest(req.Payload)
 			if ok {
-				f.rw.WriteWindowSize(w.Window.Width, w.Window.Height)
+				f.rw.WriteWindowSize(uint32(w.Window.Width), uint32(w.Window.Height))
 			}
 			if f.pcb != nil {
 				go f.pcb()
@@ -310,7 +311,7 @@ func (f *SSHForwarder) forwardSourceRequests(wg *sync.WaitGroup) {
 		case "window-change":
 			w, ok := ParseWchanRequest(req.Payload)
 			if ok {
-				f.rw.WriteWindowSize(w.Width, w.Height)
+				f.rw.WriteWindowSize(uint32(w.Width), uint32(w.Height))
 			}
 		}
 	}
@@ -332,13 +333,13 @@ func (f *SSHForwarder) forwardStdin(wg *sync.WaitGroup) {
 
 func (f *SSHForwarder) forwardStdout(wg *sync.WaitGroup) {
 	defer wg.Done()
-	io.Copy(io.MultiWriter(f.schn, f.rw), f.tchn)
+	io.Copy(io.MultiWriter(f.schn, NewSilentWriter(f.rw.Stdout())), f.tchn)
 	f.schn.CloseWrite()
 }
 
 func (f *SSHForwarder) forwardStderr(wg *sync.WaitGroup) {
 	defer wg.Done()
-	io.Copy(io.MultiWriter(f.schn.Stderr(), f.rw.Stderr()), f.tchn.Stderr())
+	io.Copy(io.MultiWriter(f.schn.Stderr(), NewSilentWriter(f.rw.Stderr())), f.tchn.Stderr())
 }
 
 // SandboxForwarder sandbox ssh forwarder

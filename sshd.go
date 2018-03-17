@@ -9,6 +9,7 @@
 package bunker
 
 import (
+	"compress/gzip"
 	"errors"
 	"fmt"
 	"io"
@@ -23,6 +24,7 @@ import (
 	"ireul.com/bunker/sandbox"
 	"ireul.com/bunker/types"
 	"ireul.com/bunker/utils"
+	"ireul.com/rec"
 )
 
 const (
@@ -301,7 +303,7 @@ func (s *SSHD) handleRawConn(c net.Conn) {
 			tchn,
 			treq,
 			targetUser,
-			utils.NewReplayWriter(filepath.Join(s.Config.SSHD.ReplayDir, sess.ReplayFile)),
+			createReplayFileWriter(filepath.Join(s.Config.SSHD.ReplayDir, sess.ReplayFile)),
 		).SetPtyCallback(func() {
 			s.db.Model(sess).Update(map[string]interface{}{"is_recorded": true})
 		}).SetDoneCallback(func() {
@@ -317,4 +319,10 @@ func (s *SSHD) Shutdown() (err error) {
 		return s.listener.Close()
 	}
 	return
+}
+
+func createReplayFileWriter(filename string) rec.Writer {
+	return rec.NewWriter(gzip.NewWriter(utils.NewLazyFileWriter(filename)), rec.WriterOption{
+		SqueezeFrame: 150,
+	})
 }

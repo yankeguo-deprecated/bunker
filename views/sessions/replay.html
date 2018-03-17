@@ -53,7 +53,11 @@
     <script src="https://cdn.bootcss.com/xterm/2.9.2/xterm.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.bootcss.com/pako/1.0.6/pako_inflate.min.js" crossorigin="anonymous"></script>
     <script>
-        function decodeUint32(b1, b2, b3, b4) {
+        function decodeUint32(array, i) {
+            var b1 = array[i]
+            var b2 = array[i + 1]
+            var b3 = array[i + 2]
+            var b4 = array[i + 3]
             return (b1 << 24) + (b2 << 16) + (b3 << 8) + b4
         }
 
@@ -88,7 +92,7 @@
                     break
                 }
                 // check time
-                var ts = decodeUint32(data[idx], data[idx + 1], data[idx + 2], data[idx + 3])
+                var ts = decodeUint32(data, idx)
                 if (ts > ctx.t) {
                     break
                 }
@@ -97,17 +101,22 @@
                 switch (typ) {
                     case 1:
                     case 2: {
-                        var len = decodeUint32(data[idx + 5], data[idx + 6], data[idx + 7], data[idx + 8])
+                        var len = decodeUint32(data, idx + 5)
                         var payload = new TextDecoder("utf-8").decode(ctx.raw.slice(idx + 9, idx + 9 + len))
                         term.write(payload)
                         idx += (9 + len)
                         break
                     }
                     case 3: {
-                        var w = decodeUint32(data[idx + 5], data[idx + 6], data[idx + 7], data[idx + 8])
-                        var h = decodeUint32(data[idx + 9], data[idx + 10], data[idx + 11], data[idx + 12])
+                        var len = decodeUint32(data, idx + 5)
+                        if (len != 8) {
+                            term.write("窗口尺寸帧结构错误")
+                            return
+                        }
+                        var w = decodeUint32(data, idx + 9)
+                        var h = decodeUint32(data, idx + 13)
                         term.resize(w, h)
-                        idx += 13
+                        idx += 17
                         break
                     }
                     default: {

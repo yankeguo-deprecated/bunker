@@ -10,6 +10,8 @@ package utils
 
 import (
 	"io"
+	"os"
+	"path/filepath"
 	"sync"
 )
 
@@ -42,20 +44,41 @@ type lazyFilerWriter struct {
 	mtx      *sync.Mutex
 }
 
-func (lfw *lazyFilerWriter) ensure() (wc io.WriteCloser, err error) {
+func (lfw *lazyFilerWriter) ensureStream() (w io.WriteCloser, err error) {
 	lfw.mtx.Lock()
 	defer lfw.mtx.Unlock()
-	// TODO:
+	if lfw.w != nil {
+		w = lfw.w
+		return
+	}
+	// ensure directory
+	d := filepath.Dir(lfw.filename)
+	if err = os.MkdirAll(d, os.FileMode(0750)); err != nil {
+		return
+	}
+	var f *os.File
+	if f, err = os.OpenFile(lfw.filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, os.FileMode(0640)); err != nil {
+		return
+	}
+	lfw.w = f
+	w = f
 	return
 }
 
 func (lfw *lazyFilerWriter) Write(p []byte) (n int, err error) {
-	// TODO:
-	return
+	var w io.WriteCloser
+	if w, err = lfw.ensureStream(); err != nil {
+		return
+	}
+	return w.Write(p)
 }
 
 func (lfw *lazyFilerWriter) Close() error {
-	// TODO:
+	lfw.mtx.Lock()
+	defer lfw.mtx.Unlock()
+	if lfw.w != nil {
+		return lfw.Close()
+	}
 	return nil
 }
 
