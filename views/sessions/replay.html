@@ -14,7 +14,7 @@
     <meta name="session-id" content="{{.Session.ID}}" />
     <link href="https://cdn.bootcss.com/xterm/2.9.2/xterm.min.css" rel="stylesheet" crossorigin="anonymous" />
     <style>
-        div#xterm {
+        div#bunker-xterm {
             background-color: black;
             position: absolute;
             padding: 4px;
@@ -60,16 +60,18 @@
                 <p class="navbar-text">
                     用户:&nbsp;{{.Session.UserAccount}}
                 </p>
+                {{if .Session.Command}}
                 <p class="navbar-text">
-                    目标:&nbsp;{{.Session.TargetUser}}@{{.Session.TargetServer}}
+                    命令:&nbsp;{{.Session.Command}}
                 </p>
+                {{end}}
                 <p class="navbar-text">
-                    时间:&nbsp;{{.Session_StartedAt}}
+                    时间:&nbsp;{{.Session_StartedAt}}&nbsp;-&nbsp;{{.Session_EndedAt}}
                 </p>
             </div>
         </div>
     </nav>
-    <div id="xterm"></div>
+    <div id="bunker-xterm"></div>
     <nav class="navbar navbar-default navbar-fixed-bottom">
         <div class="container-fluid">
             <ul class="nav navbar-nav">
@@ -243,7 +245,7 @@
                 cursorBlink: false,
                 scrollBack: 1000000
             });
-            term.open(document.getElementById('xterm'), true);
+            term.open(document.getElementById('bunker-xterm'), true);
             term.write("正在下载...\r\n")
             // download session replay file
             $.ajax({

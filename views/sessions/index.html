@@ -32,6 +32,9 @@
             <div class="col-md-12">
                 <h4>操作记录</h4>
                 <hr/>
+                <p>
+                    系统记录了所有用户的沙箱操作记录
+                </p>
             </div>
             <div class="col-md-12">
                 {{template "common/pagination" .Pagination}}
@@ -44,7 +47,7 @@
                             <tr>
                                 <td>ID</td>
                                 <td>用户</td>
-                                <td>目标</td>
+                                <td>初始命令</td>
                                 <td>开始时间</td>
                                 <td>结束时间</td>
                                 <td></td>
@@ -56,7 +59,10 @@
                                 <td>{{.ID}}</td>
                                 <td>{{.User}}</td>
                                 <td>
-                                    <code>{{.TargetUser}}@{{.TargetServer}}</code>
+                                    {{if .Command}}
+                                    <code>{{.Command}}</code> {{else}}
+                                    <span class="text-muted">无</span>
+                                    {{end}}
                                 </td>
                                 <td>{{.StartedAt}}</td>
                                 <td>{{.EndedAt}}</td>

@@ -28,10 +28,9 @@ import (
 )
 
 const (
-	sshdBunkerUserAccount   = "bunker-user-account"
 	sshdBunkerSandboxMode   = "bunker-sandbox-mode"
+	sshdBunkerUserAccount   = "bunker-user-account"
 	sshdBunkerTargetUser    = "bunker-target-user"
-	sshdBunkerTargetServer  = "bunker-target-server"
 	sshdBunkerTargetAddress = "bunker-target-address"
 )
 
@@ -99,22 +98,20 @@ func (s *SSHD) createPublicKeyCallback() func(ssh.ConnMetadata, ssh.PublicKey) (
 				Extensions: map[string]string{
 					sshdBunkerUserAccount:   u.Account,
 					sshdBunkerTargetUser:    tu,
-					sshdBunkerTargetServer:  r.Name,
 					sshdBunkerTargetAddress: r.Address,
 				},
 			}, nil
-		} else {
-			// connection from public
-			if k.IsSandbox {
-				return nil, fmt.Errorf("shall never use sandbox key to connect sandbox")
-			}
-			return &ssh.Permissions{
-				Extensions: map[string]string{
-					sshdBunkerUserAccount: u.Account,
-					sshdBunkerSandboxMode: "YES",
-				},
-			}, nil
 		}
+		// connection from public
+		if k.IsSandbox {
+			return nil, fmt.Errorf("shall never use sandbox key to connect sandbox")
+		}
+		return &ssh.Permissions{
+			Extensions: map[string]string{
+				sshdBunkerUserAccount: u.Account,
+				sshdBunkerSandboxMode: "YES",
+			},
+		}, nil
 	}
 }
 
@@ -221,7 +218,6 @@ func (s *SSHD) handleRawConn(c net.Conn) {
 	var userAccount = sconn.Permissions.Extensions[sshdBunkerUserAccount]
 	var targetUser = sconn.Permissions.Extensions[sshdBunkerTargetUser]
 	var sandboxMode = sconn.Permissions.Extensions[sshdBunkerSandboxMode]
-	var targetServer = sconn.Permissions.Extensions[sshdBunkerTargetServer]
 	var targetAddress = sconn.Permissions.Extensions[sshdBunkerTargetAddress]
 	// $SANDBOX SUPPORT$
 	if len(sandboxMode) > 0 {
@@ -250,8 +246,28 @@ func (s *SSHD) handleRawConn(c net.Conn) {
 			if schn, sreq, err = nchn.Accept(); err != nil {
 				continue
 			}
+			// create a session
+			var sess *models.Session
+			if sess, err = s.db.CreateSession(userAccount); err != nil {
+				schn.Close()
+				continue
+			}
 			// forward
-			utils.NewSandboxForwarder(sb, schn, sreq).Start(wg)
+			utils.NewSandboxForwarder(
+				sb,
+				schn,
+				sreq,
+				createReplayFileWriter(filepath.Join(s.Config.SSHD.ReplayDir, sess.ReplayFile)),
+			).SetCommandCallback(func(cmd string) {
+				s.db.Model(sess).Update(map[string]interface{}{
+					"command": cmd,
+				})
+			}).SetDoneCallback(func(a bool) {
+				s.db.Model(sess).Update(map[string]interface{}{
+					"is_recorded": a,
+					"ended_at":    time.Now(),
+				})
+			}).Start(wg)
 		}
 		wg.Wait()
 		return
@@ -291,12 +307,6 @@ func (s *SSHD) handleRawConn(c net.Conn) {
 			continue
 		}
 
-		var sess *models.Session
-		if sess, err = s.db.CreateSession(userAccount, targetUser, targetServer); err != nil {
-			tchn.Close()
-			continue
-		}
-
 		if schn, sreq, err = nchn.Accept(); err != nil {
 			tchn.Close()
 			continue
@@ -309,12 +319,7 @@ func (s *SSHD) handleRawConn(c net.Conn) {
 			tchn,
 			treq,
 			targetUser,
-			createReplayFileWriter(filepath.Join(s.Config.SSHD.ReplayDir, sess.ReplayFile)),
-		).SetPtyCallback(func() {
-			s.db.Model(sess).Update(map[string]interface{}{"is_recorded": true})
-		}).SetDoneCallback(func() {
-			s.db.Model(sess).Update(map[string]interface{}{"ended_at": time.Now()})
-		}).Start(wg)
+		).Start(wg)
 	}
 	wg.Wait()
 }

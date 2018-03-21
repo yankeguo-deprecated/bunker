@@ -20,13 +20,12 @@ import (
 
 // SessionItem session item
 type SessionItem struct {
-	ID           uint
-	User         string
-	StartedAt    string
-	EndedAt      string
-	TargetUser   string
-	TargetServer string
-	IsRecorded   bool
+	ID         uint
+	User       string
+	Command    string
+	StartedAt  string
+	EndedAt    string
+	IsRecorded bool
 }
 
 // SessionsPerPage sessions per page
@@ -54,13 +53,12 @@ func GetSessionsIndex(ctx *web.Context, db *models.DB, cfg types.Config) {
 	out := []SessionItem{}
 	for _, s := range ss {
 		out = append(out, SessionItem{
-			ID:           s.ID,
-			User:         s.UserAccount,
-			StartedAt:    PrettyTime(&s.StartedAt),
-			EndedAt:      PrettyTime(s.EndedAt),
-			TargetUser:   s.TargetUser,
-			TargetServer: s.TargetServer,
-			IsRecorded:   s.IsRecorded,
+			ID:         s.ID,
+			User:       s.UserAccount,
+			Command:    s.Command,
+			StartedAt:  PrettyTime(&s.StartedAt),
+			EndedAt:    PrettyTime(s.EndedAt),
+			IsRecorded: s.IsRecorded,
 		})
 	}
 	ctx.Data["Sessions"] = out
@@ -90,5 +88,6 @@ func GetSessionReplay(ctx *web.Context, db *models.DB, fl *session.Flash) {
 	}
 	ctx.Data["Session"] = s
 	ctx.Data["Session_StartedAt"] = PrettyTime(&s.StartedAt)
+	ctx.Data["Session_EndedAt"] = PrettyTime(s.EndedAt)
 	ctx.HTML(200, "sessions/replay")
 }

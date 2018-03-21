@@ -200,12 +200,10 @@ func (w *DB) UpdateSandboxPublicKeyForAccount(fp string, account string) (err er
 }
 
 // CreateSession create a new session model
-func (w *DB) CreateSession(account, tuser, tserver string) (s *Session, err error) {
+func (w *DB) CreateSession(account string) (s *Session, err error) {
 	s = &Session{
-		UserAccount:  account,
-		TargetUser:   tuser,
-		TargetServer: tserver,
-		StartedAt:    time.Now(),
+		UserAccount: account,
+		StartedAt:   time.Now(),
 	}
 	if err = w.Create(s).Error; err != nil {
 		return

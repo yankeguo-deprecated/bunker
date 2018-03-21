@@ -24,6 +24,12 @@ import (
 	"ireul.com/shellquote"
 )
 
+// DoneCallback done callback
+type DoneCallback func(bool)
+
+// CommandCallback command callback
+type CommandCallback func(string)
+
 // CheckSSHLocalIP check ssh local ip
 func CheckSSHLocalIP(conn ssh.ConnMetadata, ip string) bool {
 	hostIP := net.ParseIP(ip)
@@ -33,11 +39,15 @@ func CheckSSHLocalIP(conn ssh.ConnMetadata, ip string) bool {
 	return false
 }
 
-// SSHForwarderPtyCallback pty is detected
-type SSHForwarderPtyCallback func()
-
-// SSHForwarderDoneCallback pty is detected
-type SSHForwarderDoneCallback func()
+func shouldCommandBeRecorded(cmd []string) bool {
+	if len(cmd) == 0 {
+		return true
+	}
+	if strings.ToLower(strings.TrimSpace(cmd[0])) == "scp" {
+		return false
+	}
+	return true
+}
 
 // SSHConfigEntry ssh config entry
 type SSHConfigEntry struct {
@@ -211,33 +221,17 @@ type SSHForwarder struct {
 	tchn  ssh.Channel
 	treq  <-chan *ssh.Request
 	tuser string
-	rw    rec.Writer
-	pcb   SSHForwarderPtyCallback
-	dcb   SSHForwarderDoneCallback
 }
 
 // NewSSHForwarder new ssh forwarder
-func NewSSHForwarder(schn ssh.Channel, sreq <-chan *ssh.Request, tchn ssh.Channel, treq <-chan *ssh.Request, tuser string, rw rec.Writer) *SSHForwarder {
+func NewSSHForwarder(schn ssh.Channel, sreq <-chan *ssh.Request, tchn ssh.Channel, treq <-chan *ssh.Request, tuser string) *SSHForwarder {
 	return &SSHForwarder{
 		schn:  schn,
 		sreq:  sreq,
 		tchn:  tchn,
 		treq:  treq,
 		tuser: tuser,
-		rw:    rw,
 	}
-}
-
-// SetPtyCallback set pty callback
-func (f *SSHForwarder) SetPtyCallback(pcb SSHForwarderPtyCallback) *SSHForwarder {
-	f.pcb = pcb
-	return f
-}
-
-// SetDoneCallback set pty callback
-func (f *SSHForwarder) SetDoneCallback(dcb SSHForwarderDoneCallback) *SSHForwarder {
-	f.dcb = dcb
-	return f
 }
 
 // Start start forwarding with sync.WaitGroup
@@ -259,12 +253,6 @@ func (f *SSHForwarder) ForwardTarget(gwg *sync.WaitGroup) {
 	wg.Wait()
 	// close source channel, because target channel is totally finished
 	f.schn.Close()
-	// close replay writer
-	f.rw.Close()
-	// call done callback
-	if f.dcb != nil {
-		go f.dcb()
-	}
 }
 
 // ForwardSource forward source connection to target connection
@@ -307,23 +295,6 @@ func (f *SSHForwarder) forwardSourceRequests(wg *sync.WaitGroup) {
 			ok, _ := f.tchn.SendRequest(req.Type, req.WantReply, req.Payload)
 			req.Reply(ok, nil)
 		}
-		// initialize replayWriter if pty-request is found
-		switch req.Type {
-		case "pty-req":
-			f.rw.Activate()
-			w, ok := ParsePtyRequest(req.Payload)
-			if ok {
-				f.rw.WriteWindowSize(uint32(w.Window.Width), uint32(w.Window.Height))
-			}
-			if f.pcb != nil {
-				go f.pcb()
-			}
-		case "window-change":
-			w, ok := ParseWchanRequest(req.Payload)
-			if ok {
-				f.rw.WriteWindowSize(uint32(w.Width), uint32(w.Height))
-			}
-		}
 	}
 }
 
@@ -343,13 +314,13 @@ func (f *SSHForwarder) forwardStdin(wg *sync.WaitGroup) {
 
 func (f *SSHForwarder) forwardStdout(wg *sync.WaitGroup) {
 	defer wg.Done()
-	io.Copy(io.MultiWriter(f.schn, NewSilentWriter(f.rw.Stdout())), f.tchn)
+	io.Copy(f.schn, f.tchn)
 	f.schn.CloseWrite()
 }
 
 func (f *SSHForwarder) forwardStderr(wg *sync.WaitGroup) {
 	defer wg.Done()
-	io.Copy(io.MultiWriter(f.schn.Stderr(), NewSilentWriter(f.rw.Stderr())), f.tchn.Stderr())
+	io.Copy(f.schn.Stderr(), f.tchn.Stderr())
 }
 
 // SandboxForwarder sandbox ssh forwarder
@@ -362,15 +333,31 @@ type SandboxForwarder struct {
 	pty       *sandbox.Pty
 	isHandled bool
 	wch       chan sandbox.Window
+	rw        rec.Writer
+	dcb       DoneCallback
+	ccb       CommandCallback
 }
 
 // NewSandboxForwarder new sandbox forwarder
-func NewSandboxForwarder(sb sandbox.Sandbox, scnh ssh.Channel, sreq <-chan *ssh.Request) *SandboxForwarder {
+func NewSandboxForwarder(sb sandbox.Sandbox, scnh ssh.Channel, sreq <-chan *ssh.Request, rw rec.Writer) *SandboxForwarder {
 	return &SandboxForwarder{
 		schn: scnh,
 		sreq: sreq,
 		sb:   sb,
+		rw:   rw,
 	}
+}
+
+// SetDoneCallback set done callback
+func (f *SandboxForwarder) SetDoneCallback(dcb DoneCallback) *SandboxForwarder {
+	f.dcb = dcb
+	return f
+}
+
+// SetCommandCallback set command callback
+func (f *SandboxForwarder) SetCommandCallback(ccb CommandCallback) *SandboxForwarder {
+	f.ccb = ccb
+	return f
 }
 
 // Start start on sync.WaitGroup
@@ -381,7 +368,7 @@ func (f *SandboxForwarder) Start(gwg *sync.WaitGroup) {
 
 // Run run on sync.WaitGroup
 func (f *SandboxForwarder) Run(gwg *sync.WaitGroup) {
-	defer gwg.Done()
+	// range ssh requests
 	for req := range f.sreq {
 		switch req.Type {
 		case "shell", "exec":
@@ -397,6 +384,20 @@ func (f *SandboxForwarder) Run(gwg *sync.WaitGroup) {
 				var pl struct{ Value string }
 				ssh.Unmarshal(req.Payload, &pl)
 				f.cmd, _ = shellquote.Split(pl.Value)
+				// start recording
+				if shouldCommandBeRecorded(f.cmd) {
+					// activate the replay writer
+					f.rw.Activate()
+					defer f.rw.Close()
+					// send initial window size
+					if f.pty != nil && f.pty.Window.Height > 0 && f.pty.Window.Width > 0 {
+						f.rw.WriteWindowSize(uint32(f.pty.Window.Width), uint32(f.pty.Window.Height))
+					}
+				}
+				// record command
+				if f.ccb != nil {
+					go f.ccb(pl.Value)
+				}
 				// handle
 				go f.handle()
 			}
@@ -447,11 +448,19 @@ func (f *SandboxForwarder) Run(gwg *sync.WaitGroup) {
 				f.pty.Window = w
 				f.wch <- w
 				req.Reply(true, nil)
+				// notify window size
+				f.rw.WriteWindowSize(uint32(w.Width), uint32(w.Height))
 			}
 		default:
 			req.Reply(false, nil)
 		}
 	}
+	// call done callback
+	if f.dcb != nil {
+		f.dcb(f.rw.IsActivated())
+	}
+	// done global WaitGroup
+	gwg.Done()
 }
 
 func (f *SandboxForwarder) handle() {
@@ -459,8 +468,8 @@ func (f *SandboxForwarder) handle() {
 		Env:     f.env,
 		Command: f.cmd,
 		Stdin:   f.schn,
-		Stdout:  f.schn,
-		Stderr:  f.schn.Stderr(),
+		Stdout:  io.MultiWriter(f.schn, NewSilentWriter(f.rw.Stdout())),
+		Stderr:  io.MultiWriter(f.schn.Stderr(), NewSilentWriter(f.rw.Stderr())),
 	}
 	if f.pty != nil {
 		opts.IsPty = true

@@ -17,13 +17,12 @@ import (
 // Session recorded ssh session
 type Session struct {
 	Model
-	UserAccount  string     `orm:"index" json:"userAccount"`
-	TargetServer string     `orm:"index" json:"targetServer"`
-	TargetUser   string     `orm:"index" json:"targetUser"`
-	StartedAt    time.Time  `orm:"index" json:"startedAt"`
-	EndedAt      *time.Time `orm:"index" json:"endedAt"`
-	IsRecorded   bool       `orm:"" json:"isRecorded"`
-	ReplayFile   string     `orm:"" json:"-"`
+	UserAccount string     `orm:"index" json:"userAccount"`
+	Command     string     `orm:"" json:"command"`
+	StartedAt   time.Time  `orm:"index" json:"startedAt"`
+	EndedAt     *time.Time `orm:"index" json:"endedAt"`
+	IsRecorded  bool       `orm:"" json:"isRecorded"`
+	ReplayFile  string     `orm:"" json:"-"`
 }
 
 // GenerateReplayFile generate replay file
