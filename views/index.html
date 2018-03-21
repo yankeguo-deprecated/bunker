@@ -62,8 +62,11 @@
         </div>
         <div class="row">
             <div class="col-md-12">
-                <h4>授权访问的服务器</h4>
+                <h4>访问目标服务器</h4>
                 <hr/>
+                <p>在
+                    <b>沙箱内部</b>使用
+                    <code>.ssh/config</code>配置的别名访问目标服务器</p>
             </div>
         </div>
         <div class="row">
@@ -85,7 +88,7 @@
                                 <td>{{.TargetUser}}</td>
                                 <td>{{.ServerName}}</td>
                                 <td>
-                                    <code>ssh {{.TargetUser}}@{{.ServerName}}@{{$.Config.Domain}}{{$.SSHCommandSuffix}}</code>
+                                    <code>ssh {{.ServerName}}-{{.TargetUser}}</code>
                                 </td>
                                 <td>{{.ExpiresAt}}</td>
                             </tr>

@@ -79,10 +79,34 @@ func (s *SSHD) createPublicKeyCallback() func(ssh.ConnMetadata, ssh.PublicKey) (
 			return nil, fmt.Errorf("unknown user or blocked user")
 		}
 		s.db.Touch(&k, &u)
-		// $SANDBOX SUPPORT$
-		if len(tu) == 0 || len(th) == 0 {
+		// check connection source
+		if utils.CheckSSHLocalIP(conn, s.Config.Sandbox.HostIP) {
+			// connection from sandbox
+			if len(tu) == 0 || len(th) == 0 || !k.IsSandbox {
+				return nil, fmt.Errorf("invalid target or invalid key")
+			}
+			// find Server
+			r := models.Server{}
+			if err = s.db.First(&r, "name = ?", th).Error; err != nil || r.ID == 0 {
+				return nil, fmt.Errorf("target host not found with name \"%s\"", th)
+			}
+			// check Grant
+			if err = s.db.CheckGrant(u, r, tu); err != nil {
+				return nil, fmt.Errorf("no permission to connect %s@%s", tu, th)
+			}
+			s.db.Touch(&r)
+			return &ssh.Permissions{
+				Extensions: map[string]string{
+					sshdBunkerUserAccount:   u.Account,
+					sshdBunkerTargetUser:    tu,
+					sshdBunkerTargetServer:  r.Name,
+					sshdBunkerTargetAddress: r.Address,
+				},
+			}, nil
+		} else {
+			// connection from public
 			if k.IsSandbox {
-				return nil, fmt.Errorf("cannot connect sandbox with sandbox key")
+				return nil, fmt.Errorf("shall never use sandbox key to connect sandbox")
 			}
 			return &ssh.Permissions{
 				Extensions: map[string]string{
@@ -91,24 +115,6 @@ func (s *SSHD) createPublicKeyCallback() func(ssh.ConnMetadata, ssh.PublicKey) (
 				},
 			}, nil
 		}
-		// find Server
-		r := models.Server{}
-		if err = s.db.First(&r, "name = ?", th).Error; err != nil || r.ID == 0 {
-			return nil, fmt.Errorf("target host not found with name \"%s\"", th)
-		}
-		// check auth
-		if err = s.db.CheckGrant(u, r, tu); err != nil {
-			return nil, fmt.Errorf("no permission to connect %s@%s", tu, th)
-		}
-		s.db.Touch(&r)
-		return &ssh.Permissions{
-			Extensions: map[string]string{
-				sshdBunkerUserAccount:   u.Account,
-				sshdBunkerTargetUser:    tu,
-				sshdBunkerTargetServer:  r.Name,
-				sshdBunkerTargetAddress: r.Address,
-			},
-		}, nil
 	}
 }
 
@@ -190,7 +196,7 @@ func (s *SSHD) updateSandboxSSHConfig(sb sandbox.Sandbox, account string) (err e
 	for _, c := range cg {
 		se = append(se, sandbox.SSHEntry{
 			Name: fmt.Sprintf("%s-%s", c.ServerName, c.TargetUser),
-			Host: s.Config.Domain,
+			Host: s.Config.Sandbox.HostIP,
 			Port: uint(s.Config.SSHD.Port),
 			User: fmt.Sprintf("%s@%s", c.TargetUser, c.ServerName),
 		})

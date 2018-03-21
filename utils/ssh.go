@@ -14,6 +14,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"net"
 	"strings"
 	"sync"
 
@@ -22,6 +23,15 @@ import (
 	"ireul.com/rec"
 	"ireul.com/shellquote"
 )
+
+// CheckSSHLocalIP check ssh local ip
+func CheckSSHLocalIP(conn ssh.ConnMetadata, ip string) bool {
+	hostIP := net.ParseIP(ip)
+	if addr, ok := conn.LocalAddr().(*net.TCPAddr); ok {
+		return addr.IP.Equal(hostIP)
+	}
+	return false
+}
 
 // SSHForwarderPtyCallback pty is detected
 type SSHForwarderPtyCallback func()

@@ -50,7 +50,8 @@ type SSHConfig struct {
 // SandboxConfig sandbox config
 type SandboxConfig struct {
 	Image   string `toml:"image"`
-	DataDir string `toml:"datadir"`
+	DataDir string `toml:"data_dir"`
+	HostIP  string `toml:"host_ip"`
 }
 
 // ConsulConfig consul config
