@@ -16,6 +16,7 @@ import (
 	capi "github.com/hashicorp/consul/api"
 	"ireul.com/bunker/models"
 	"ireul.com/bunker/types"
+	"ireul.com/bunker/utils"
 )
 
 // Auto auto server registry
@@ -76,14 +77,14 @@ func (a *Auto) update() {
 	for _, n := range ns {
 		a.db.Assign(map[string]interface{}{
 			"address": fmt.Sprintf("%s:22", n.Address),
-			"is_auto": true,
+			"is_auto": utils.True,
 		}).FirstOrCreate(&models.Server{}, map[string]interface{}{
 			"name": n.Node,
 		})
 	}
 	// delete missing
 	ss := []models.Server{}
-	if err = a.db.Find(&ss, "is_auto = ?", true).Error; err != nil {
+	if err = a.db.Find(&ss, "is_auto = ?", utils.True).Error; err != nil {
 		a.lastIndex = 0
 		return
 	}

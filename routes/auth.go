@@ -14,6 +14,7 @@ import (
 
 	"ireul.com/bunker/models"
 	"ireul.com/bunker/types"
+	"ireul.com/bunker/utils"
 	"ireul.com/web"
 	"ireul.com/web/session"
 )
@@ -38,7 +39,7 @@ func (a *auth) SignedIn() bool {
 }
 
 func (a *auth) SignedInAsAdmin() bool {
-	return a.User() != nil && a.User().IsAdmin
+	return a.User() != nil && utils.ToBool(a.User().IsAdmin)
 }
 
 func (a *auth) User() *models.User {

@@ -14,6 +14,7 @@ import (
 
 	"ireul.com/bunker/models"
 	"ireul.com/bunker/types"
+	"ireul.com/bunker/utils"
 	"ireul.com/web"
 	"ireul.com/web/session"
 )
@@ -58,7 +59,7 @@ func GetSessionsIndex(ctx *web.Context, db *models.DB, cfg types.Config) {
 			Command:    s.Command,
 			StartedAt:  PrettyTime(&s.StartedAt),
 			EndedAt:    PrettyTime(s.EndedAt),
-			IsRecorded: s.IsRecorded,
+			IsRecorded: utils.ToBool(s.IsRecorded),
 		})
 	}
 	ctx.Data["Sessions"] = out

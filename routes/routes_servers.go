@@ -19,6 +19,7 @@ import (
 	"golang.org/x/crypto/ssh"
 	"ireul.com/bunker/models"
 	"ireul.com/bunker/types"
+	"ireul.com/bunker/utils"
 	"ireul.com/web"
 	"ireul.com/web/session"
 )
@@ -78,7 +79,7 @@ func GetServersIndex(ctx *web.Context, cfg types.Config, db *models.DB, sess ses
 			Address:   s.Address,
 			CreatedAt: TimeAgo(&s.CreatedAt),
 			UpdatedAt: TimeAgo(&s.UpdatedAt),
-			IsAuto:    s.IsAuto,
+			IsAuto:    utils.ToBool(s.IsAuto),
 			UsedAt:    TimeAgo(s.UsedAt),
 		})
 	}
@@ -154,7 +155,7 @@ func GetServerEdit(ctx *web.Context, db *models.DB, fl *session.Flash) {
 		ctx.Redirect(ctx.URLFor("servers"))
 		return
 	}
-	if s.IsAuto {
+	if utils.ToBool(s.IsAuto) {
 		fl.Error("无法编辑自动管理的服务器")
 		ctx.Redirect(ctx.URLFor("servers"))
 	}
@@ -177,7 +178,7 @@ func PostServerUpdate(ctx *web.Context, f ServerCreateForm, fl *session.Flash, d
 		ctx.Redirect(ctx.URLFor("servers"))
 		return
 	}
-	if s.IsAuto {
+	if utils.ToBool(s.IsAuto) {
 		fl.Error("无法编辑自动管理的服务器")
 		ctx.Redirect(ctx.URLFor("servers"))
 	}
@@ -193,7 +194,7 @@ func PostServerUpdate(ctx *web.Context, f ServerCreateForm, fl *session.Flash, d
 // PostServerDestroy post server destroy
 func PostServerDestroy(ctx *web.Context, db *models.DB) {
 	defer ctx.Redirect(ctx.URLFor("servers"))
-	db.Delete(&models.Server{}, "id = ? AND is_auto = ?", ctx.Params(":id"), false)
+	db.Delete(&models.Server{}, "id = ? AND is_auto = ?", ctx.Params(":id"), utils.False)
 }
 
 // GetMasterKey get master key

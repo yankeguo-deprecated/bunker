@@ -21,7 +21,7 @@ type Session struct {
 	Command     string     `orm:"" json:"command"`
 	StartedAt   time.Time  `orm:"index" json:"startedAt"`
 	EndedAt     *time.Time `orm:"index" json:"endedAt"`
-	IsRecorded  bool       `orm:"" json:"isRecorded"`
+	IsRecorded  int        `orm:"not null;default:0" json:"isRecorded"`
 	ReplayFile  string     `orm:"" json:"-"`
 }
 

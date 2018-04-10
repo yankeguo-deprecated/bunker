@@ -18,11 +18,11 @@ import (
 // User user model
 type User struct {
 	Model
-	Account        string     `orm:"not null;unique_index" json:"account"`      // account name
-	PasswordDigest string     `orm:"not null;type:text" json:"-"`               // digest of password
-	IsAdmin        bool       `orm:"not null;default:'false'" json:"isAdmin"`   // is this user system admin
-	IsBlocked      bool       `orm:"not null;default:'false'" json:"isBlocked"` // is this user blocked
-	UsedAt         *time.Time `orm:"" json:"usedAt"`                            // last seen at
+	Account        string     `orm:"not null;unique_index" json:"account"` // account name
+	PasswordDigest string     `orm:"not null;type:text" json:"-"`          // digest of password
+	IsAdmin        int        `orm:"not null;default:0" json:"isAdmin"`    // is this user system admin
+	IsBlocked      int        `orm:"not null;default:0" json:"isBlocked"`  // is this user blocked
+	UsedAt         *time.Time `orm:"" json:"usedAt"`                       // last seen at
 }
 
 // BeforeSave before save callback

@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"ireul.com/bunker/models"
+	"ireul.com/bunker/utils"
 	"ireul.com/web"
 	"ireul.com/web/session"
 )
@@ -48,13 +49,13 @@ func GetUsersIndex(ctx *web.Context, db *models.DB, a Auth, sess session.Store) 
 
 	for _, u := range users {
 		tags := []UserItemTag{}
-		if u.IsAdmin {
+		if utils.ToBool(u.IsAdmin) {
 			tags = append(tags, UserItemTag{
 				Style: "success",
 				Name:  "管理员",
 			})
 		}
-		if u.IsBlocked {
+		if utils.ToBool(u.IsBlocked) {
 			tags = append(tags, UserItemTag{
 				Style: "danger",
 				Name:  "已封禁",
@@ -74,8 +75,8 @@ func GetUsersIndex(ctx *web.Context, db *models.DB, a Auth, sess session.Store) 
 			CreatedAt: TimeAgo(&u.CreatedAt),
 			UpdatedAt: TimeAgo(&u.UpdatedAt),
 			UsedAt:    TimeAgo(u.UsedAt),
-			IsAdmin:   u.IsAdmin,
-			IsBlocked: u.IsBlocked,
+			IsAdmin:   utils.ToBool(u.IsAdmin),
+			IsBlocked: utils.ToBool(u.IsBlocked),
 			IsCurrent: u.ID == a.User().ID,
 		})
 	}
@@ -148,10 +149,10 @@ func PostUserUpdate(ctx *web.Context, f UserUpdateForm, db *models.DB) {
 	attrs := map[string]interface{}{}
 
 	if len(f.IsAdmin) > 0 {
-		attrs["is_admin"] = strings.ToLower(f.IsAdmin) == "y"
+		attrs["is_admin"] = utils.ToInt(strings.ToLower(f.IsAdmin) == "y")
 	}
 	if len(f.IsBlocked) > 0 {
-		attrs["is_blocked"] = strings.ToLower(f.IsBlocked) == "y"
+		attrs["is_blocked"] = utils.ToInt(strings.ToLower(f.IsBlocked) == "y")
 	}
 
 	u := models.User{}

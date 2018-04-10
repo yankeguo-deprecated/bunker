@@ -88,7 +88,7 @@ func (b *Bunker) CreateUser(option CreateUserOption) (err error) {
 	// create user
 	u := &models.User{
 		Account: option.Account,
-		IsAdmin: option.IsAdmin,
+		IsAdmin: utils.ToInt(option.IsAdmin),
 	}
 	if err = u.SetPassword(option.Password); err != nil {
 		return

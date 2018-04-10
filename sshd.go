@@ -74,14 +74,14 @@ func (s *SSHD) createPublicKeyCallback() func(ssh.ConnMetadata, ssh.PublicKey) (
 		}
 		// find User
 		u := models.User{}
-		if err = s.db.First(&u, k.UserID).Error; err != nil || u.ID == 0 || u.IsBlocked {
+		if err = s.db.First(&u, k.UserID).Error; err != nil || u.ID == 0 || utils.ToBool(u.IsBlocked) {
 			return nil, fmt.Errorf("unknown user or blocked user")
 		}
 		s.db.Touch(&k, &u)
 		// check connection source
 		if utils.CheckSSHLocalIP(conn, s.Config.Sandbox.HostIP) {
 			// connection from sandbox
-			if len(tu) == 0 || len(th) == 0 || !k.IsSandbox {
+			if len(tu) == 0 || len(th) == 0 || !utils.ToBool(k.IsSandbox) {
 				return nil, fmt.Errorf("invalid target or invalid key")
 			}
 			// find Server
@@ -103,7 +103,7 @@ func (s *SSHD) createPublicKeyCallback() func(ssh.ConnMetadata, ssh.PublicKey) (
 			}, nil
 		}
 		// connection from public
-		if k.IsSandbox {
+		if utils.ToBool(k.IsSandbox) {
 			return nil, fmt.Errorf("shall never use sandbox key to connect sandbox")
 		}
 		return &ssh.Permissions{
@@ -264,7 +264,7 @@ func (s *SSHD) handleRawConn(c net.Conn) {
 				})
 			}).SetDoneCallback(func(a bool) {
 				s.db.Model(sess).Update(map[string]interface{}{
-					"is_recorded": a,
+					"is_recorded": utils.ToInt(a),
 					"ended_at":    time.Now(),
 				})
 			}).Start(wg)

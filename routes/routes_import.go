@@ -28,7 +28,7 @@ func PostImportSSHConfig(ctx *web.Context, db *models.DB) {
 	ls := utils.ParseSSHConfig(c)
 	for _, e := range ls {
 		db.Assign(map[string]interface{}{
-			"is_auto": false,
+			"is_auto": utils.False,
 			"address": e.Address,
 		}).FirstOrCreate(&models.Server{}, map[string]interface{}{
 			"name": e.Name,

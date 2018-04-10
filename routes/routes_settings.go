@@ -15,6 +15,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 	"ireul.com/bunker/models"
+	"ireul.com/bunker/utils"
 	"ireul.com/web"
 	"ireul.com/web/session"
 )
@@ -24,7 +25,7 @@ func GetSettingsProfile(ctx *web.Context, a Auth) {
 	ctx.Data["SideClass_Profile"] = "active"
 	ctx.Data["CreatedAt"] = TimeAgo(&a.User().CreatedAt)
 	ctx.Data["UsedAt"] = TimeAgo(a.User().UsedAt)
-	if a.User().IsAdmin {
+	if utils.ToBool(a.User().IsAdmin) {
 		ctx.Data["UserType"] = "管理员"
 	} else {
 		ctx.Data["UserType"] = "普通用户"
@@ -98,7 +99,7 @@ func GetSettingsSSHKeysIndex(ctx *web.Context, a Auth, db *models.DB) {
 			Fingerprint: k.Fingerprint,
 			UsedAt:      TimeAgo(k.UsedAt),
 			CreatedAt:   TimeAgo(&k.CreatedAt),
-			IsSandbox:   k.IsSandbox,
+			IsSandbox:   utils.ToBool(k.IsSandbox),
 		})
 	}
 
@@ -164,5 +165,5 @@ func PostSettingsSSHKeysCreate(ctx *web.Context, a Auth, f SSHKeyCreateForm, fl 
 // PostSettingsSSHKeysDestroy destroy a ssh key
 func PostSettingsSSHKeysDestroy(ctx *web.Context, a Auth, db *models.DB) {
 	defer ctx.Redirect("/settings/ssh-keys")
-	db.Delete(&models.Key{}, "user_id = ? AND id = ? AND is_sandbox = ?", a.User().ID, ctx.Params(":id"), false)
+	db.Delete(&models.Key{}, "user_id = ? AND id = ? AND is_sandbox = ?", a.User().ID, ctx.Params(":id"), utils.False)
 }

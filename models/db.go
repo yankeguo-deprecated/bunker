@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"ireul.com/bunker/types"
+	"ireul.com/bunker/utils"
 	"ireul.com/com"
 	"ireul.com/orm"
 	_ "ireul.com/sqlite3" // sqlite3 adapter
@@ -192,7 +193,7 @@ func (w *DB) UpdateSandboxPublicKeyForAccount(fp string, account string) (err er
 		"fingerprint": fp,
 	}).FirstOrCreate(&k, map[string]interface{}{
 		"user_id":    u.ID,
-		"is_sandbox": true,
+		"is_sandbox": utils.True,
 	}).Error; err != nil {
 		return
 	}
