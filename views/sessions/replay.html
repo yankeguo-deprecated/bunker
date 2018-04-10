@@ -235,6 +235,17 @@
             }
             this.time = targetTime
             this.updateLabel()
+            this.fixSize()
+        }
+
+        ReplaySession.prototype.fixSize = function() {
+            var ch = $(this.option.container).height()
+            var th = $(this.term.element).height()
+            var r = ch / th
+            if (r >= 1) {
+                r = 1
+            }
+            $(this.term.element).attr('style', 'zoom:' + r + ';')
         }
 
         $(window).ready(function () {
@@ -268,6 +279,7 @@
                     term.write("\r\n")
                     term.write("[请点击播放]\r\n")
                     new ReplaySession(term, inflated, {
+                        container: "#bunker-xterm",
                         timeLabel: "#time-label",
                         playButton: "#play-button",
                         replayProgress: "#replay-progress",
