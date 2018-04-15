@@ -12,9 +12,9 @@ package routes
 import (
 	"fmt"
 
-	"ireul.com/bunker/models"
-	"ireul.com/bunker/utils"
-	"ireul.com/web"
+	"github.com/yankeguo/bunker/models"
+	"github.com/yankeguo/bunker/utils"
+	"magi.systems/net/web"
 )
 
 // PostImportSSHConfig post import ssh config

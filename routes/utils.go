@@ -13,8 +13,8 @@ import (
 	"net/url"
 	"time"
 
-	"ireul.com/com"
-	"ireul.com/timeago"
+	"magi.systems/com"
+	"magi.systems/time/ago"
 )
 
 // Pagination page info
@@ -86,7 +86,7 @@ func TimeAgo(t *time.Time) string {
 	if t == nil {
 		return "-"
 	}
-	return timeago.Chinese.Format(*t)
+	return ago.Chinese.Format(*t)
 }
 
 // PrettyTime pretty time

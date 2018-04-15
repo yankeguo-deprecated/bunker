@@ -18,10 +18,11 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/yankeguo/bunker/sandbox"
 	"golang.org/x/crypto/ssh"
-	"ireul.com/bunker/sandbox"
-	"ireul.com/rec"
-	"ireul.com/shellquote"
+	"magi.systems/encoding/rec"
+	"magi.systems/io/ioext"
+	"magi.systems/text/shellquote"
 )
 
 // DoneCallback done callback
@@ -468,8 +469,8 @@ func (f *SandboxForwarder) handle() {
 		Env:     f.env,
 		Command: f.cmd,
 		Stdin:   f.schn,
-		Stdout:  io.MultiWriter(f.schn, NewSilentWriter(f.rw.Stdout())),
-		Stderr:  io.MultiWriter(f.schn.Stderr(), NewSilentWriter(f.rw.Stderr())),
+		Stdout:  io.MultiWriter(f.schn, ioext.NewSilentWriter(f.rw.Stdout())),
+		Stderr:  io.MultiWriter(f.schn.Stderr(), ioext.NewSilentWriter(f.rw.Stderr())),
 	}
 	if f.pty != nil {
 		opts.IsPty = true

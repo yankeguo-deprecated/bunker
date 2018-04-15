@@ -14,9 +14,9 @@ import (
 	"time"
 
 	capi "github.com/hashicorp/consul/api"
-	"ireul.com/bunker/models"
-	"ireul.com/bunker/types"
-	"ireul.com/bunker/utils"
+	"github.com/yankeguo/bunker/models"
+	"github.com/yankeguo/bunker/types"
+	"github.com/yankeguo/bunker/utils"
 )
 
 // Auto auto server registry

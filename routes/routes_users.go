@@ -13,10 +13,10 @@ import (
 	"net/http"
 	"strings"
 
-	"ireul.com/bunker/models"
-	"ireul.com/bunker/utils"
-	"ireul.com/web"
-	"ireul.com/web/session"
+	"github.com/yankeguo/bunker/models"
+	"github.com/yankeguo/bunker/utils"
+	"magi.systems/net/web"
+	"magi.systems/net/web/session"
 )
 
 // UserItem user item

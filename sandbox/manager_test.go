@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"testing"
 
-	"ireul.com/bunker/types"
+	"github.com/yankeguo/bunker/types"
 )
 
 func TestManagerFindOrCreate(t *testing.T) {

@@ -14,7 +14,7 @@ import (
 	"log"
 	"text/template"
 
-	"ireul.com/com"
+	"magi.systems/com"
 )
 
 const scriptGenerateSSHKey = `#!/bin/bash

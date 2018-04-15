@@ -10,8 +10,8 @@
 package routes
 
 import (
-	"ireul.com/bunker/models"
-	"ireul.com/web"
+	"github.com/yankeguo/bunker/models"
+	"magi.systems/net/web"
 )
 
 // GetUserHints get user hints

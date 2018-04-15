@@ -16,12 +16,12 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/yankeguo/bunker/models"
+	"github.com/yankeguo/bunker/types"
+	"github.com/yankeguo/bunker/utils"
 	"golang.org/x/crypto/ssh"
-	"ireul.com/bunker/models"
-	"ireul.com/bunker/types"
-	"ireul.com/bunker/utils"
-	"ireul.com/web"
-	"ireul.com/web/session"
+	"magi.systems/net/web"
+	"magi.systems/net/web/session"
 )
 
 var clientKey string

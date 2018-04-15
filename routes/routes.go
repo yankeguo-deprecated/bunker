@@ -9,10 +9,10 @@
 package routes
 
 import (
-	"ireul.com/bunker/types"
-	"ireul.com/web"
-	"ireul.com/web/binding"
-	"ireul.com/web/csrf"
+	"github.com/yankeguo/bunker/types"
+	"magi.systems/net/web"
+	"magi.systems/net/web/binding"
+	"magi.systems/net/web/csrf"
 )
 
 // Mount mount all routes

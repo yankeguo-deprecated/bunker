@@ -16,10 +16,10 @@ import (
 	"strings"
 	"time"
 
-	"ireul.com/bunker/models"
-	"ireul.com/orm"
-	"ireul.com/web"
-	"ireul.com/web/session"
+	"github.com/yankeguo/bunker/models"
+	"magi.systems/database/orm"
+	"magi.systems/net/web"
+	"magi.systems/net/web/session"
 )
 
 // GrantItem grant item

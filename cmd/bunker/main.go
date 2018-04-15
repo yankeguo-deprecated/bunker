@@ -13,10 +13,10 @@ import (
 	"log"
 	"os"
 
-	"ireul.com/bunker"
-	"ireul.com/bunker/types"
-	"ireul.com/bunker/utils"
-	"ireul.com/cli"
+	"github.com/yankeguo/bunker"
+	"github.com/yankeguo/bunker/types"
+	"github.com/yankeguo/bunker/utils"
+	"magi.systems/flag/cli"
 )
 
 var migrateCommand = cli.Command{

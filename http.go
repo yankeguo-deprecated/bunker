@@ -14,14 +14,14 @@ import (
 	"fmt"
 	"net/http"
 
-	"ireul.com/bunker/models"
-	"ireul.com/bunker/routes"
-	"ireul.com/bunker/types"
-	"ireul.com/web"
-	"ireul.com/web/cache"
-	"ireul.com/web/captcha"
-	"ireul.com/web/csrf"
-	"ireul.com/web/session"
+	"github.com/yankeguo/bunker/models"
+	"github.com/yankeguo/bunker/routes"
+	"github.com/yankeguo/bunker/types"
+	"magi.systems/net/web"
+	"magi.systems/net/web/cache"
+	"magi.systems/net/web/captcha"
+	"magi.systems/net/web/csrf"
+	"magi.systems/net/web/session"
 )
 
 var (
@@ -33,7 +33,7 @@ var (
 type HTTP struct {
 	Config types.Config // config
 	server *http.Server // core http.Server
-	web    *web.Web     // ireul.com/web instance
+	web    *web.Web     // magi.systems/net/web instance
 	db     *models.DB   // models.DB
 }
 

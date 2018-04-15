@@ -15,11 +15,11 @@ import (
 	"strings"
 	"time"
 
-	"ireul.com/bunker/types"
-	"ireul.com/bunker/utils"
-	"ireul.com/com"
-	"ireul.com/orm"
-	_ "ireul.com/sqlite3" // sqlite3 adapter
+	"github.com/yankeguo/bunker/types"
+	"github.com/yankeguo/bunker/utils"
+	"magi.systems/com"
+	"magi.systems/database/orm"
+	_ "magi.systems/database/sqlite3" // sqlite3 adapter
 )
 
 // NamePattern general name pattern

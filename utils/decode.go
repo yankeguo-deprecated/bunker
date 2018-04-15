@@ -9,8 +9,8 @@
 package utils
 
 import (
-	"ireul.com/bunker/types"
-	"ireul.com/toml"
+	"github.com/yankeguo/bunker/types"
+	"magi.systems/encoding/toml"
 )
 
 // DecodeConfigFile decode a toml config file to types.Config

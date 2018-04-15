@@ -12,11 +12,11 @@ import (
 	"errors"
 	"fmt"
 
-	"ireul.com/bunker/models"
-	"ireul.com/bunker/types"
-	"ireul.com/web"
-	"ireul.com/web/captcha"
-	"ireul.com/web/session"
+	"github.com/yankeguo/bunker/models"
+	"github.com/yankeguo/bunker/types"
+	"magi.systems/net/web"
+	"magi.systems/net/web/captcha"
+	"magi.systems/net/web/session"
 )
 
 // CombinedGrantItem combined grant

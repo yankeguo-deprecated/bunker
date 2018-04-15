@@ -19,12 +19,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/yankeguo/bunker/models"
+	"github.com/yankeguo/bunker/sandbox"
+	"github.com/yankeguo/bunker/types"
+	"github.com/yankeguo/bunker/utils"
 	"golang.org/x/crypto/ssh"
-	"ireul.com/bunker/models"
-	"ireul.com/bunker/sandbox"
-	"ireul.com/bunker/types"
-	"ireul.com/bunker/utils"
-	"ireul.com/rec"
+	"magi.systems/encoding/rec"
+	"magi.systems/io/ioext"
 )
 
 const (
@@ -333,7 +334,7 @@ func (s *SSHD) Shutdown() (err error) {
 }
 
 func createReplayFileWriter(filename string) rec.Writer {
-	return rec.NewWriter(gzip.NewWriter(utils.NewLazyFileWriter(filename)), rec.WriterOption{
+	return rec.NewWriter(gzip.NewWriter(ioext.NewLazyFileWriter(filename)), rec.WriterOption{
 		SqueezeFrame: 150,
 	})
 }
