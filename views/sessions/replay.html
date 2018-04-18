@@ -285,6 +285,9 @@
                         replayProgress: "#replay-progress",
                         replayProgressBar: "#replay-progress-bar"
                     })
+                    setTimeout(function () {
+                        $("#play-button").click()
+                    }, 500);
                 },
                 error: function (xhr, status, err) {
                     term.write("无法下载回放文件: " + err + "\r\n")
