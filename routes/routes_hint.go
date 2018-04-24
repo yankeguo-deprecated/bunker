@@ -11,7 +11,7 @@ package routes
 
 import (
 	"github.com/yankeguo/bunker/models"
-	"magi.systems/net/web"
+	"islandzero.net/x/net/web"
 )
 
 // GetUserHints get user hints

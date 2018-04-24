@@ -14,7 +14,7 @@ import (
 	"log"
 	"text/template"
 
-	"magi.systems/com"
+	"islandzero.net/x/com"
 )
 
 const scriptGenerateSSHKey = `#!/bin/bash

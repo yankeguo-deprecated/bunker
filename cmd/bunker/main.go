@@ -16,7 +16,7 @@ import (
 	"github.com/yankeguo/bunker"
 	"github.com/yankeguo/bunker/types"
 	"github.com/yankeguo/bunker/utils"
-	"magi.systems/flag/cli"
+	"islandzero.net/x/flag/cli"
 )
 
 var migrateCommand = cli.Command{

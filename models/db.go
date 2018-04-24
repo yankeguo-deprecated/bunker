@@ -17,9 +17,9 @@ import (
 
 	"github.com/yankeguo/bunker/types"
 	"github.com/yankeguo/bunker/utils"
-	"magi.systems/com"
-	"magi.systems/database/orm"
-	_ "magi.systems/database/sqlite3" // sqlite3 adapter
+	"islandzero.net/x/com"
+	"islandzero.net/x/database/orm"
+	_ "islandzero.net/x/database/sqlite3" // sqlite3 adapter
 )
 
 // NamePattern general name pattern

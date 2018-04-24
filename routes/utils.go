@@ -13,8 +13,8 @@ import (
 	"net/url"
 	"time"
 
-	"magi.systems/com"
-	"magi.systems/time/ago"
+	"islandzero.net/x/com"
+	"islandzero.net/x/time/ago"
 )
 
 // Pagination page info

@@ -17,11 +17,11 @@ import (
 	"github.com/yankeguo/bunker/models"
 	"github.com/yankeguo/bunker/routes"
 	"github.com/yankeguo/bunker/types"
-	"magi.systems/net/web"
-	"magi.systems/net/web/cache"
-	"magi.systems/net/web/captcha"
-	"magi.systems/net/web/csrf"
-	"magi.systems/net/web/session"
+	"islandzero.net/x/net/web"
+	"islandzero.net/x/net/web/cache"
+	"islandzero.net/x/net/web/captcha"
+	"islandzero.net/x/net/web/csrf"
+	"islandzero.net/x/net/web/session"
 )
 
 var (
@@ -33,7 +33,7 @@ var (
 type HTTP struct {
 	Config types.Config // config
 	server *http.Server // core http.Server
-	web    *web.Web     // magi.systems/net/web instance
+	web    *web.Web     // islandzero.net/x/net/web instance
 	db     *models.DB   // models.DB
 }
 

@@ -24,8 +24,8 @@ import (
 	"github.com/yankeguo/bunker/types"
 	"github.com/yankeguo/bunker/utils"
 	"golang.org/x/crypto/ssh"
-	"magi.systems/encoding/rec"
-	"magi.systems/io/ioext"
+	"islandzero.net/x/encoding/rec"
+	"islandzero.net/x/io/ioext"
 )
 
 const (

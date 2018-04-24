@@ -10,9 +10,9 @@ package routes
 
 import (
 	"github.com/yankeguo/bunker/types"
-	"magi.systems/net/web"
-	"magi.systems/net/web/binding"
-	"magi.systems/net/web/csrf"
+	"islandzero.net/x/net/web"
+	"islandzero.net/x/net/web/binding"
+	"islandzero.net/x/net/web/csrf"
 )
 
 // Mount mount all routes

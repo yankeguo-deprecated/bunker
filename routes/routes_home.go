@@ -14,9 +14,9 @@ import (
 
 	"github.com/yankeguo/bunker/models"
 	"github.com/yankeguo/bunker/types"
-	"magi.systems/net/web"
-	"magi.systems/net/web/captcha"
-	"magi.systems/net/web/session"
+	"islandzero.net/x/net/web"
+	"islandzero.net/x/net/web/captcha"
+	"islandzero.net/x/net/web/session"
 )
 
 // CombinedGrantItem combined grant

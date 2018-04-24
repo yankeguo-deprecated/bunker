@@ -17,9 +17,9 @@ import (
 	"time"
 
 	"github.com/yankeguo/bunker/models"
-	"magi.systems/database/orm"
-	"magi.systems/net/web"
-	"magi.systems/net/web/session"
+	"islandzero.net/x/database/orm"
+	"islandzero.net/x/net/web"
+	"islandzero.net/x/net/web/session"
 )
 
 // GrantItem grant item

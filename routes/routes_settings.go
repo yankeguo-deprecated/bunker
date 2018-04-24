@@ -16,8 +16,8 @@ import (
 	"github.com/yankeguo/bunker/models"
 	"github.com/yankeguo/bunker/utils"
 	"golang.org/x/crypto/ssh"
-	"magi.systems/net/web"
-	"magi.systems/net/web/session"
+	"islandzero.net/x/net/web"
+	"islandzero.net/x/net/web/session"
 )
 
 // GetSettingsProfile get profile

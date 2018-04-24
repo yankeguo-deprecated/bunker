@@ -15,8 +15,8 @@ import (
 
 	"github.com/yankeguo/bunker/models"
 	"github.com/yankeguo/bunker/utils"
-	"magi.systems/net/web"
-	"magi.systems/net/web/session"
+	"islandzero.net/x/net/web"
+	"islandzero.net/x/net/web/session"
 )
 
 // UserItem user item
