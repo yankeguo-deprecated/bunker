@@ -14,7 +14,7 @@ import (
 
 	"github.com/yankeguo/bunker/models"
 	"github.com/yankeguo/bunker/utils"
-	"islandzero.net/x/net/web"
+	"landzero.net/x/net/web"
 )
 
 // PostImportSSHConfig post import ssh config

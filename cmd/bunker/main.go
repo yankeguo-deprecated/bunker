@@ -16,7 +16,7 @@ import (
 	"github.com/yankeguo/bunker"
 	"github.com/yankeguo/bunker/types"
 	"github.com/yankeguo/bunker/utils"
-	"islandzero.net/x/flag/cli"
+	"landzero.net/x/flag/cli"
 )
 
 var migrateCommand = cli.Command{

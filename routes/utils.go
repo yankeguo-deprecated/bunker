@@ -13,8 +13,8 @@ import (
 	"net/url"
 	"time"
 
-	"islandzero.net/x/com"
-	"islandzero.net/x/time/ago"
+	"landzero.net/x/com"
+	"landzero.net/x/time/ago"
 )
 
 // Pagination page info

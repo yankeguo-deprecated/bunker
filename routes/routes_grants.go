@@ -17,9 +17,9 @@ import (
 	"time"
 
 	"github.com/yankeguo/bunker/models"
-	"islandzero.net/x/database/orm"
-	"islandzero.net/x/net/web"
-	"islandzero.net/x/net/web/session"
+	"landzero.net/x/database/orm"
+	"landzero.net/x/net/web"
+	"landzero.net/x/net/web/session"
 )
 
 // GrantItem grant item

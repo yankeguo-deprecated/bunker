@@ -17,11 +17,11 @@ import (
 	"github.com/yankeguo/bunker/models"
 	"github.com/yankeguo/bunker/routes"
 	"github.com/yankeguo/bunker/types"
-	"islandzero.net/x/net/web"
-	"islandzero.net/x/net/web/cache"
-	"islandzero.net/x/net/web/captcha"
-	"islandzero.net/x/net/web/csrf"
-	"islandzero.net/x/net/web/session"
+	"landzero.net/x/net/web"
+	"landzero.net/x/net/web/cache"
+	"landzero.net/x/net/web/captcha"
+	"landzero.net/x/net/web/csrf"
+	"landzero.net/x/net/web/session"
 )
 
 var (
@@ -33,7 +33,7 @@ var (
 type HTTP struct {
 	Config types.Config // config
 	server *http.Server // core http.Server
-	web    *web.Web     // islandzero.net/x/net/web instance
+	web    *web.Web     // landzero.net/x/net/web instance
 	db     *models.DB   // models.DB
 }
 

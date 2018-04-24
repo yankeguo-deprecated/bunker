@@ -20,8 +20,8 @@ import (
 	"github.com/yankeguo/bunker/types"
 	"github.com/yankeguo/bunker/utils"
 	"golang.org/x/crypto/ssh"
-	"islandzero.net/x/net/web"
-	"islandzero.net/x/net/web/session"
+	"landzero.net/x/net/web"
+	"landzero.net/x/net/web/session"
 )
 
 var clientKey string

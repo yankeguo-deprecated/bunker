@@ -10,9 +10,9 @@ package routes
 
 import (
 	"github.com/yankeguo/bunker/types"
-	"islandzero.net/x/net/web"
-	"islandzero.net/x/net/web/binding"
-	"islandzero.net/x/net/web/csrf"
+	"landzero.net/x/net/web"
+	"landzero.net/x/net/web/binding"
+	"landzero.net/x/net/web/csrf"
 )
 
 // Mount mount all routes

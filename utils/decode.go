@@ -10,7 +10,7 @@ package utils
 
 import (
 	"github.com/yankeguo/bunker/types"
-	"islandzero.net/x/encoding/toml"
+	"landzero.net/x/encoding/toml"
 )
 
 // DecodeConfigFile decode a toml config file to types.Config

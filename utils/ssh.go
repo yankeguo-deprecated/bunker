@@ -20,9 +20,9 @@ import (
 
 	"github.com/yankeguo/bunker/sandbox"
 	"golang.org/x/crypto/ssh"
-	"islandzero.net/x/encoding/rec"
-	"islandzero.net/x/io/ioext"
-	"islandzero.net/x/text/shellquote"
+	"landzero.net/x/encoding/rec"
+	"landzero.net/x/io/ioext"
+	"landzero.net/x/text/shellquote"
 )
 
 // DoneCallback done callback

@@ -15,8 +15,8 @@ import (
 	"github.com/yankeguo/bunker/models"
 	"github.com/yankeguo/bunker/types"
 	"github.com/yankeguo/bunker/utils"
-	"islandzero.net/x/net/web"
-	"islandzero.net/x/net/web/session"
+	"landzero.net/x/net/web"
+	"landzero.net/x/net/web/session"
 )
 
 // Auth auth result

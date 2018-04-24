@@ -11,7 +11,7 @@ package routes
 
 import (
 	"github.com/yankeguo/bunker/models"
-	"islandzero.net/x/net/web"
+	"landzero.net/x/net/web"
 )
 
 // GetUserHints get user hints

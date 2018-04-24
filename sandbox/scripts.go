@@ -14,7 +14,7 @@ import (
 	"log"
 	"text/template"
 
-	"islandzero.net/x/com"
+	"landzero.net/x/com"
 )
 
 const scriptGenerateSSHKey = `#!/bin/bash
