@@ -288,9 +288,9 @@ func (f *SSHForwarder) forwardSourceRequests(wg *sync.WaitGroup) {
 			req.Type = "exec"
 			req.Payload = ssh.Marshal(&pl)
 		}
-		// ban "x11-req", "subsystem", "env" requests, cause they may escape from sudo
+		// ban "x11-req", "subsystem" requests, cause they may escape from sudo
 		switch req.Type {
-		case "x11-req", "subsystem", "env":
+		case "x11-req", "subsystem":
 			req.Reply(false, nil)
 		default:
 			ok, _ := f.tchn.SendRequest(req.Type, req.WantReply, req.Payload)
