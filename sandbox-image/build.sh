@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker build -t ireul/sandbox .
+docker build -t yanke/bunker-sandbox .

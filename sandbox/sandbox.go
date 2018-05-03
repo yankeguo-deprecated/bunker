@@ -13,8 +13,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
+	"os"
 	"strings"
 	"sync"
+	"syscall"
 
 	dtypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -157,7 +160,6 @@ func (s *sandbox) ExecAttach(opts ExecAttachOptions) (err error) {
 	if hr, err = s.client.ContainerExecAttach(context.Background(), id.ID, execCfg); err != nil {
 		return
 	}
-	defer hr.Close()
 	// pipe window size
 	if opts.IsPty && opts.WindowChan != nil {
 		go sandboxPipeWindowSize(s.client, id.ID, opts.WindowChan)
@@ -166,6 +168,22 @@ func (s *sandbox) ExecAttach(opts ExecAttachOptions) (err error) {
 	go sandboxPipeStdin(hr, opts.Stdin, &err)
 	// pipe stdout/stderr
 	sandboxPipeStdoutStderr(hr, opts.Stdout, opts.Stderr, opts.IsPty, &err)
+	// close hr
+	hr.Close()
+	// inspect exec
+	var is dtypes.ContainerExecInspect
+	if is, err = s.client.ContainerExecInspect(context.Background(), id.ID); err != nil {
+		return
+	}
+	// send SIGTERM to zombie process
+	if is.Running == true && is.Pid > 0 {
+		log.Println("Exec:", id.ID, "not terminated properly, sending SIGTERM")
+		var p *os.Process
+		if p, err = os.FindProcess(is.Pid); err != nil {
+			return
+		}
+		p.Signal(syscall.SIGTERM)
+	}
 	return
 }
 
