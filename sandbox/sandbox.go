@@ -13,15 +13,11 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
-	"os"
 	"strings"
-	"sync"
-	"syscall"
 
 	dtypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/stdcopy"
+	"landzero.net/x/os/minit"
 )
 
 // Window pty window size
@@ -60,6 +56,7 @@ type Sandbox interface {
 
 type sandbox struct {
 	client *client.Client
+	sock   string
 	name   string
 }
 
@@ -83,144 +80,52 @@ func (s *sandbox) GetSSHPublicKey() (pkey string, err error) {
 }
 
 func (s *sandbox) ExecScript(sc string) (stdout string, stderr string, err error) {
-	// create exec
-	var id dtypes.IDResponse
-	if id, err = s.client.ContainerExecCreate(
-		context.Background(),
-		s.name,
-		dtypes.ExecConfig{
-			AttachStdin:  true,
-			AttachStdout: true,
-			AttachStderr: true,
-			Cmd: []string{
-				"/bin/bash",
-			},
-		},
-	); err != nil {
+	// dial
+	var c minit.Conn
+	cmd := minit.Command{
+		Cmd: []string{"/bin/bash"},
+	}
+	if c, err = minit.Dial("unix", s.sock, cmd); err != nil {
 		return
 	}
-	// exec attach
-	var hr dtypes.HijackedResponse
-	if hr, err = s.client.ContainerExecAttach(context.Background(), id.ID, dtypes.ExecConfig{}); err != nil {
-		return
-	}
-	defer hr.Close()
-	wg := &sync.WaitGroup{}
-	// pipe stdin
-	wg.Add(1)
-	go func() {
-		sandboxPipeStdin(hr, bytes.NewReader([]byte(sc)), &err)
-		wg.Done()
-	}()
-	// pipe stdout/stderr
-	bout := &bytes.Buffer{}
-	berr := &bytes.Buffer{}
-	wg.Add(1)
-	go func() {
-		sandboxPipeStdoutStderr(hr, bout, berr, false, &err)
-		wg.Done()
-	}()
-	// wait
-	wg.Wait()
-
-	// output as string
-	stdout = string(bout.Bytes())
-	stderr = string(berr.Bytes())
-
+	defer c.Close()
+	// pipe
+	outBuf, errBuf := &bytes.Buffer{}, &bytes.Buffer{}
+	go c.ReadFrom(bytes.NewBufferString(sc))
+	_, err = c.DemuxTo(outBuf, errBuf)
+	stdout, stderr = outBuf.String(), errBuf.String()
 	return
 }
 
 func (s *sandbox) ExecAttach(opts ExecAttachOptions) (err error) {
-	execCfg := dtypes.ExecConfig{
-		AttachStdin:  true,
-		AttachStdout: true,
-		AttachStderr: true,
-		Tty:          opts.IsPty,
-		Cmd:          opts.Command,
-		Env:          opts.Env,
+	// dial
+	cmd := minit.Command{
+		Cmd: opts.Command,
+		Pty: opts.IsPty,
+		Env: opts.Env,
 	}
-	// append env if TERM is set
 	if len(opts.Term) > 0 {
-		if execCfg.Env == nil {
-			execCfg.Env = make([]string, 0)
+		if cmd.Env == nil {
+			cmd.Env = []string{}
 		}
-		execCfg.Env = append(execCfg.Env, fmt.Sprintf("TERM=%s", opts.Term))
+		cmd.Env = append(cmd.Env, fmt.Sprintf("TERM=%s", opts.Term))
 	}
-	// use /bin/bash if no command specified
-	if len(execCfg.Cmd) == 0 {
-		execCfg.Cmd = []string{"/bin/bash"}
+	if len(cmd.Cmd) == 0 {
+		cmd.Cmd = []string{"/bin/bash"}
 	}
-	// create exec
-	var id dtypes.IDResponse
-	if id, err = s.client.ContainerExecCreate(context.Background(), s.name, execCfg); err != nil {
+	var c minit.Conn
+	if c, err = minit.Dial("unix", s.sock, cmd); err != nil {
 		return
 	}
-	// exec attach
-	var hr dtypes.HijackedResponse
-	if hr, err = s.client.ContainerExecAttach(context.Background(), id.ID, execCfg); err != nil {
-		return
+	defer c.Close()
+	if cmd.Pty && opts.WindowChan != nil {
+		go func() {
+			for w := range opts.WindowChan {
+				c.SetWinsize(uint16(w.Width), uint16(w.Height))
+			}
+		}()
 	}
-	// pipe window size
-	if opts.IsPty && opts.WindowChan != nil {
-		go sandboxPipeWindowSize(s.client, id.ID, opts.WindowChan)
-	}
-	// pipe stdin
-	go sandboxPipeStdin(hr, opts.Stdin, &err)
-	// pipe stdout/stderr
-	sandboxPipeStdoutStderr(hr, opts.Stdout, opts.Stderr, opts.IsPty, &err)
-	// close hr
-	hr.Close()
-	// inspect exec
-	var is dtypes.ContainerExecInspect
-	if is, err = s.client.ContainerExecInspect(context.Background(), id.ID); err != nil {
-		return
-	}
-	// send SIGTERM to zombie process
-	if is.Running == true && is.Pid > 0 {
-		log.Println("Exec:", id.ID, "not terminated properly, sending SIGTERM")
-		var p *os.Process
-		if p, err = os.FindProcess(is.Pid); err != nil {
-			return
-		}
-		p.Signal(syscall.SIGTERM)
-	}
+	go c.ReadFrom(opts.Stdin)
+	_, err = c.DemuxTo(opts.Stdout, opts.Stderr)
 	return
-}
-
-func sandboxPipeWindowSize(c *client.Client, id string, wchan chan Window) {
-	for {
-		w, ok := <-wchan
-		if !ok {
-			break
-		}
-		c.ContainerExecResize(context.Background(), id, dtypes.ResizeOptions{Height: w.Height, Width: w.Width})
-	}
-}
-
-func sandboxPipeStdin(hr dtypes.HijackedResponse, stdin io.Reader, errout *error) {
-	var err error
-	_, err = io.Copy(hr.Conn, stdin)
-	hr.CloseWrite()
-	// clear EOF
-	if err != nil && err != io.EOF {
-		*errout = err
-	}
-	return
-}
-
-func sandboxPipeStdoutStderr(hr dtypes.HijackedResponse, stdout, stderr io.Writer, isPty bool, errout *error) {
-	var err error
-	if isPty {
-		_, err = io.Copy(stdout, hr.Reader)
-	} else {
-		_, err = stdcopy.StdCopy(stdout, stderr, hr.Reader)
-	}
-	// clear EOF
-	if err != nil && err != io.EOF {
-		*errout = err
-	}
-	return
-}
-
-func sandboxPipeSignal() {
 }

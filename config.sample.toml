@@ -16,7 +16,7 @@ replay_dir = "/tmp/bunker-replays"
 [ssh]
 private_key = "/etc/bunker/id_rsa"
 [sandbox]
-image = "ireul/sandbox"
+image = "yanke/bunker-sandbox"
 data_dir = "/var/bunker/sandboxdata"
 [consul]
 enable = false

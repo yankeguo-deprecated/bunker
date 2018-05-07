@@ -12,7 +12,7 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 	"sync"
 
 	"github.com/docker/docker/client"
@@ -61,8 +61,8 @@ func (m *manager) FindOrCreate(account string) (s Sandbox, err error) {
 	defer m.mutex.Unlock()
 	name := GetContainerName(account)
 	// ensure dir
-	uDir := path.Join(m.Config.Sandbox.DataDir, name)
-	sDir := path.Join(m.Config.Sandbox.DataDir, "shared")
+	uDir := filepath.Join(m.Config.Sandbox.DataDir, name)
+	sDir := filepath.Join(m.Config.Sandbox.DataDir, "shared")
 	if err = os.MkdirAll(uDir, dirPerm); err != nil {
 		return
 	}
@@ -107,6 +107,7 @@ func (m *manager) FindOrCreate(account string) (s Sandbox, err error) {
 	// create the sandbox
 	s = &sandbox{
 		name:   name,
+		sock:   filepath.Join(uDir, ".minit.sock"), // minit sock default to /root/.minit.sock, will be mounted to volume
 		client: m.client,
 	}
 	// start if not running
