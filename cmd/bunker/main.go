@@ -31,6 +31,32 @@ var migrateCommand = cli.Command{
 	},
 }
 
+var changePasswordCommand = cli.Command{
+	Name:  "change-password",
+	Usage: "change a user's password",
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name:  "account",
+			Usage: "account name of user",
+		},
+		cli.StringFlag{
+			Name:  "password",
+			Usage: "password of user",
+		},
+	},
+	Action: func(ctx *cli.Context) (err error) {
+		var b *bunker.Bunker
+		if b, err = createBunker(ctx); err != nil {
+			return
+		}
+		option := bunker.ChangePasswordOption{
+			Account:  ctx.String("account"),
+			Password: ctx.String("password"),
+		}
+		return b.ChangePassword(option)
+	},
+}
+
 var createUserCommand = cli.Command{
 	Name:  "create-user",
 	Usage: "create a new user",
@@ -134,6 +160,7 @@ func main() {
 		runCommand,
 		createUserCommand,
 		createServerCommand,
+		changePasswordCommand,
 	}
 	err := app.Run(os.Args)
 	if err != nil {

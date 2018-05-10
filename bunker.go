@@ -114,6 +114,27 @@ func (b *Bunker) CreateUser(option CreateUserOption) (err error) {
 	return
 }
 
+// ChangePasswordOption reset user password option
+type ChangePasswordOption struct {
+	Account  string
+	Password string
+}
+
+// ChangePassword reset user password
+func (b *Bunker) ChangePassword(option ChangePasswordOption) (err error) {
+	if err = b.ensureDB(); err != nil {
+		return
+	}
+	u := &models.User{}
+	if err = u.SetPassword(option.Password); err != nil {
+		return
+	}
+	err = b.db.Model(models.User{}).Where("account = ?", option.Account).Update(map[string]interface{}{
+		"password_digest": u.PasswordDigest,
+	}).Error
+	return
+}
+
 // CreateServerOption option to create a server
 type CreateServerOption struct {
 	Name    string
